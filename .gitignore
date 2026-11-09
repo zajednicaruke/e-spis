@@ -1,0 +1,99 @@
+# ===== OSOBNI DOKUMENTI (idu u Supabase Storage) =====
+*.pdf
+*.PDF
+
+# ===== BAZE PODATAKA (idu u Supabase) =====
+*.json
+*.db
+*.sqlite
+
+# ===== KLJUČEVI I CERTIFIKATI =====
+*.key
+*.pem
+*.p12
+*.pfx
+
+# ===== BACKUP DATOTEKE =====
+*.bak*
+*~
+.njm_backups/
+
+# ===== KOMPAJLIRANI BINARNI FAJLOVI =====
+napravi_offline_app
+dijagnostika*
+provjeri_github*
+izgradi_*
+patch_*
+popravi_*
+optimiziraj_*
+integriraj_*
+
+# ===== SVI DIREKTORIJI OSIM FRONTENDA =====
+.debug/
+01_jezgra/
+02_engine/
+03_leksik/
+04_binarci/
+05_arhiva/
+bst_metabolizator/
+android_build/
+pdf/
+.node_modules/
+node_modules/
+
+# ===== SVI C IZVOZI OSIM GENERATORA =====
+*.c
+!napravi_offline_app.c
+
+# ===== SVI SHELL SKRIPTI =====
+*.sh
+
+# ===== SVI NJM/LSBU FAJLOVI =====
+*.njm
+*.lsbu
+*.bin
+*.elf
+*.o
+*.s
+
+# ===== SVI DEBUG I TEST FAJLOVI =====
+test*
+*_test*
+bench*
+dijagnostika*
+*.log
+*.txt
+*.tmp
+masivno*
+preostalo*
+izlaz*
+sirovi*
+
+# ===== QR KODOVI (dinamički) =====
+QR_*
+
+# ===== SLIKE KOJE NE TREBAJU (samo 3 glavne) =====
+*.jpg
+!EU_RUKE_1793640051705.png
+!Orden_RUKE_1772802905749.png
+!TetraGramaton_1773157773345.jpg
+!Orden_RUKE_1772802905749.jpg
+!*.webp
+
+# ===== RAZNO SMEĆE =====
+.DS_Store
+Thumbs.db
+.env
+.env.local
+= 
+b
+b+
+c
+width
+memorija*
+pokazivac*
+phi[i]
+data[y]
+.git-backup-*/
+.git-old-*/
+.git-backup-*
