@@ -188,7 +188,7 @@ int main(void) {
     fprintf(fhtml, "        '</div>' +\n");
     fprintf(fhtml, "        '<button onclick=\"window.print()\" class=\"btn btn-dark\" style=\"margin-top:12px; font-size:11px; padding:6px 12px;\">🖨️ Ispiši / Spremi Potvrdu (PDF)</button>' +\n");
     fprintf(fhtml, "    '</div>';\n");
-    fprintf(fhtml, "    setTimeout(() => { new QRious({ element: document.getElementById(qrId), value: verifyUrl, size: 130 }); }, 50);\n");
+    fprintf(fhtml, "    setTimeout(() => { try { if (typeof QRious !== \"undefined\") { new QRious({ element: document.getElementById(qrId), value: verifyUrl, size: 130 }); } else { console.warn(\"QRious nije ucitan. Tekstualna alternativa.\"); } } catch(e) { console.error(\"QRious greska:\", e); } }, 50);\n");
     fprintf(fhtml, "}\n");
     fprintf(fhtml, "async function obradiJavniUpload() {\n");
     fprintf(fhtml, "    const b = document.getElementById('ju-broj').value || 'MG/PRIGOVOR-2026';\n");
