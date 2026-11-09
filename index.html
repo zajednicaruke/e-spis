@@ -43,14 +43,11 @@
     </div>
 </div>
 
-<div id="ekran-javni" class="card" style="display:none;">
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #f1f5f9; padding-bottom:15px; margin-bottom:20px;">
-        <div style="display:flex; align-items:center; gap:12px;">
-            <picture><source srcset="./Orden_RUKE_1772802905749.webp" type="image/webp"><img src="./Orden_RUKE_1772802905749.png" alt="Orden RUKE" class="logo-icon"></picture>
-            <div><h3 style="margin:0; font-size:18px;">JAVNI PORTAL E-SPIS</h3><span style="font-size:12px; color:#64748b;">Zajednica RUKE • eIDAS Verifikator</span></div>
-        </div>
-        <button class="btn" onclick="prikaziSloj('ulaz')" style="background:#f1f5f9; color:#475569; font-size:12px;">⬅ Povratak</button>
-    </div>
+<div id="ekran-javni" class="card" style="display:none; text-align:center;">
+    <picture><source srcset="./Orden_RUKE_1772802905749.webp" type="image/webp"><img src="./Orden_RUKE_1772802905749.png" alt="Orden RUKE" class="logo-main"></picture>
+    <h3 style="margin:0; font-size:22px; color:#0f172a;">JAVNI PORTAL E-SPIS</h3>
+    <div style="font-size:13px; color:#64748b; margin-top:4px; margin-bottom:15px;">Zajednica RUKE • eIDAS Verifikator</div>
+    <button class="btn" onclick="prikaziSloj('ulaz')" style="background:#f1f5f9; color:#475569; font-size:12px; margin-bottom:20px;">⬅ Povratak</button>
     <div style="display:flex; gap:10px; margin-bottom:20px;">
         <button class="btn btn-red" onclick="prikaziFormu('j-upload')" style="flex:1;">📤 Učitaj PODNESAK</button>
         <button class="btn btn-green" onclick="prikaziFormu('j-dohvat')" style="flex:1;">📥 Preuzmi / Verificiraj PODNESAK</button>
@@ -72,14 +69,11 @@
     <div id="potvrda-kontejner-javni" style="margin-top:20px;"></div>
 </div>
 
-<div id="ekran-clanovi" class="card" style="display:none;">
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #f1f5f9; padding-bottom:15px; margin-bottom:20px;">
-        <div style="display:flex; align-items:center; gap:12px;">
-            <picture><source srcset="./TetraGramaton_1773157773345.webp" type="image/webp"><img src="./TetraGramaton_1773157773345.jpg" alt="TetraGramaton" class="logo-icon"></picture>
-            <div><h3 style="margin:0; font-size:18px;">IMENIK ČLANOVA I PRETINAC</h3><span style="font-size:12px; color:#64748b;">Zajednica RUKE • Autentikacija po ulogama</span></div>
-        </div>
-        <button class="btn" onclick="prikaziSloj('ulaz')" style="background:#f1f5f9; color:#475569; font-size:12px;">⬅ Odjava</button>
-    </div>
+<div id="ekran-clanovi" class="card" style="display:none; text-align:center;">
+    <picture><source srcset="./TetraGramaton_1773157773345.webp" type="image/webp"><img src="./TetraGramaton_1773157773345.jpg" alt="TetraGramaton" class="logo-main"></picture>
+    <h3 style="margin:0; font-size:22px; color:#0f172a;">IMENIK ČLANOVA I PRETINAC</h3>
+    <div style="font-size:13px; color:#64748b; margin-top:4px; margin-bottom:15px;">Zajednica RUKE • Autentikacija po ulogama</div>
+    <button class="btn" onclick="prikaziSloj('ulaz')" style="background:#f1f5f9; color:#475569; font-size:12px; margin-bottom:20px;">⬅ Odjava</button>
     <div id="box-pin" style="background:#f1f5f9; padding:25px; border-radius:8px; text-align:center; max-width:420px; margin:20px auto;">
         <h4 style="margin-top:0; color:#0f172a;">Odaberite člana iz Imenika:</h4>
         <select id="clan-select" class="input-field" style="font-size:14px; text-align:center; margin-bottom:12px;">
@@ -205,4 +199,3 @@ function obradiClanDohvat() {
 </script>
 </body>
 </html>
-

@@ -1,3 +1,4 @@
+/* SIMETRIJA-LOGOTIPA */
 /* OPTION-V2 */
 /* KLASE-CLANSTVA-V2 */
 #include <stdio.h>
@@ -39,14 +40,11 @@ int main(void) {
     fprintf(fhtml, "    </div>\n</div>\n\n");
 
     /* ==== EKRAN 1: JAVNI PORTAL (ORDEN LOGO) ==== */
-    fprintf(fhtml, "<div id=\"ekran-javni\" class=\"card\" style=\"display:none;\">\n");
-    fprintf(fhtml, "    <div style=\"display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #f1f5f9; padding-bottom:15px; margin-bottom:20px;\">\n");
-    fprintf(fhtml, "        <div style=\"display:flex; align-items:center; gap:12px;\">\n");
-    fprintf(fhtml, "            <picture><source srcset=\"./Orden_RUKE_1772802905749.webp\" type=\"image/webp\"><img src=\"./Orden_RUKE_1772802905749.png\" alt=\"Orden RUKE\" class=\"logo-icon\"></picture>\n");
-    fprintf(fhtml, "            <div><h3 style=\"margin:0; font-size:18px;\">JAVNI PORTAL E-SPIS</h3><span style=\"font-size:12px; color:#64748b;\">Zajednica RUKE • eIDAS Verifikator</span></div>\n");
-    fprintf(fhtml, "        </div>\n");
-    fprintf(fhtml, "        <button class=\"btn\" onclick=\"prikaziSloj('ulaz')\" style=\"background:#f1f5f9; color:#475569; font-size:12px;\">⬅ Povratak</button>\n");
-    fprintf(fhtml, "    </div>\n");
+    fprintf(fhtml, "<div id=\"ekran-javni\" class=\"card\" style=\"display:none; text-align:center;\">\n");
+    fprintf(fhtml, "    <picture><source srcset=\"./Orden_RUKE_1772802905749.webp\" type=\"image/webp\"><img src=\"./Orden_RUKE_1772802905749.png\" alt=\"Orden RUKE\" class=\"logo-main\"></picture>\n");
+    fprintf(fhtml, "    <h3 style=\"margin:0; font-size:22px; color:#0f172a;\">JAVNI PORTAL E-SPIS</h3>\n");
+    fprintf(fhtml, "    <div style=\"font-size:13px; color:#64748b; margin-top:4px; margin-bottom:15px;\">Zajednica RUKE • eIDAS Verifikator</div>\n");
+    fprintf(fhtml, "    <button class=\"btn\" onclick=\"prikaziSloj('ulaz')\" style=\"background:#f1f5f9; color:#475569; font-size:12px; margin-bottom:20px;\">⬅ Povratak</button>\n");
     fprintf(fhtml, "    <div style=\"display:flex; gap:10px; margin-bottom:20px;\">\n");
     fprintf(fhtml, "        <button class=\"btn btn-red\" onclick=\"prikaziFormu('j-upload')\" style=\"flex:1;\">📤 Učitaj PODNESAK</button>\n");
     fprintf(fhtml, "        <button class=\"btn btn-green\" onclick=\"prikaziFormu('j-dohvat')\" style=\"flex:1;\">📥 Preuzmi / Verificiraj PODNESAK</button>\n");
@@ -73,14 +71,11 @@ int main(void) {
     fprintf(fhtml, "</div>\n\n");
 
     /* ==== EKRAN 2: ČLANSKI PRETINAC S IMENIKOM ČLANOVA ==== */
-    fprintf(fhtml, "<div id=\"ekran-clanovi\" class=\"card\" style=\"display:none;\">\n");
-    fprintf(fhtml, "    <div style=\"display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #f1f5f9; padding-bottom:15px; margin-bottom:20px;\">\n");
-    fprintf(fhtml, "        <div style=\"display:flex; align-items:center; gap:12px;\">\n");
-    fprintf(fhtml, "            <picture><source srcset=\"./TetraGramaton_1773157773345.webp\" type=\"image/webp\"><img src=\"./TetraGramaton_1773157773345.jpg\" alt=\"TetraGramaton\" class=\"logo-icon\"></picture>\n");
-    fprintf(fhtml, "            <div><h3 style=\"margin:0; font-size:18px;\">IMENIK ČLANOVA I PRETINAC</h3><span style=\"font-size:12px; color:#64748b;\">Zajednica RUKE • Autentikacija po ulogama</span></div>\n");
-    fprintf(fhtml, "        </div>\n");
-    fprintf(fhtml, "        <button class=\"btn\" onclick=\"prikaziSloj('ulaz')\" style=\"background:#f1f5f9; color:#475569; font-size:12px;\">⬅ Odjava</button>\n");
-    fprintf(fhtml, "    </div>\n");
+    fprintf(fhtml, "<div id=\"ekran-clanovi\" class=\"card\" style=\"display:none; text-align:center;\">\n");
+    fprintf(fhtml, "    <picture><source srcset=\"./TetraGramaton_1773157773345.webp\" type=\"image/webp\"><img src=\"./TetraGramaton_1773157773345.jpg\" alt=\"TetraGramaton\" class=\"logo-main\"></picture>\n");
+    fprintf(fhtml, "    <h3 style=\"margin:0; font-size:22px; color:#0f172a;\">IMENIK ČLANOVA I PRETINAC</h3>\n");
+    fprintf(fhtml, "    <div style=\"font-size:13px; color:#64748b; margin-top:4px; margin-bottom:15px;\">Zajednica RUKE • Autentikacija po ulogama</div>\n");
+    fprintf(fhtml, "    <button class=\"btn\" onclick=\"prikaziSloj('ulaz')\" style=\"background:#f1f5f9; color:#475569; font-size:12px; margin-bottom:20px;\">⬅ Odjava</button>\n");
     
     /* ODABIR ČLANA I UNOS PIN-A */
     fprintf(fhtml, "    <div id=\"box-pin\" style=\"background:#f1f5f9; padding:25px; border-radius:8px; text-align:center; max-width:420px; margin:20px auto;\">\n");
