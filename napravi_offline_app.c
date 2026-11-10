@@ -1,3 +1,4 @@
+/* TETRA-165 */
 /* SIMETRIJA-LOGOTIPA */
 /* OPTION-V2 */
 /* KLASE-CLANSTVA-V2 */
@@ -72,7 +73,7 @@ int main(void) {
 
     /* ==== EKRAN 2: ČLANSKI PRETINAC S IMENIKOM ČLANOVA ==== */
     fprintf(fhtml, "<div id=\"ekran-clanovi\" class=\"card\" style=\"display:none; text-align:center;\">\n");
-    fprintf(fhtml, "    <picture><source srcset=\"./TetraGramaton_1773157773345.webp\" type=\"image/webp\"><img src=\"./TetraGramaton_1773157773345.jpg\" alt=\"TetraGramaton\" class=\"logo-main\"></picture>\n");
+    fprintf(fhtml, "    <picture><source srcset=\"./TetraGramaton_1773157773345.webp\" type=\"image/webp\"><img src=\"./TetraGramaton_1773157773345.jpg\" alt=\"TetraGramaton\" class=\"logo-main\" style=\"width:165px; height:165px;\"></picture>\n");
     fprintf(fhtml, "    <h3 style=\"margin:0; font-size:22px; color:#0f172a;\">IMENIK ČLANOVA I PRETINAC</h3>\n");
     fprintf(fhtml, "    <div style=\"font-size:13px; color:#64748b; margin-top:4px; margin-bottom:15px;\">Zajednica RUKE • Autentikacija po ulogama</div>\n");
     fprintf(fhtml, "    <button class=\"btn\" onclick=\"prikaziSloj('ulaz')\" style=\"background:#f1f5f9; color:#475569; font-size:12px; margin-bottom:20px;\">⬅ Odjava</button>\n");
