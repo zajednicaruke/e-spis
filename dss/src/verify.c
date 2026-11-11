@@ -29,10 +29,17 @@ VerifyResult verify_pdf_signature(const uint8_t *pdf_buf, size_t pdf_len,
         return VERIFY_INVALID_SIG;
     }
 
-    // Popunjavamo službeni informativni string sa stvarnim podacima iz certifikata
+    // Jasno odvojeni novi redovi za sprečavanje prelijevanja metapodataka
     if (info_out) {
         snprintf(info_out, info_len,
-            "Status: OK\n  Potpisnik: %s\n  OIB: %s\n  Izdavatelj: %s\n  Valjan od: %s\n  Valjan do: %s\n  Serijski: %s\n  Kripto verify: OK (QES Razina 3)",
+            "Status: ZAPRIMLJENO I VALIDIRANO\n"
+            "Potpisnik: %s\n"
+            "OIB: %s\n"
+            "Izdavatelj: %s\n"
+            "Valjan od: %s\n"
+            "Valjan do: %s\n"
+            "Serijski: %s\n"
+            "Kripto verify: OK (QES Razina 3)",
             cert_info.subject_name, cert_info.oib, cert_info.issuer_name,
             cert_info.not_before, cert_info.not_after, cert_info.serial_number);
     }

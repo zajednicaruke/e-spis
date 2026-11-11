@@ -28,8 +28,9 @@ static void print_xml_node(FILE *f, DiagnosticNode *node, int indent) {
     if (!node) return;
     for (int i = 0; i < indent; i++) fprintf(f, "  ");
     fprintf(f, "<DiagnosticNode id=\"%d\" type=\"%d\" name=\"%s\">\n", node->id, node->type, node->name);
-    
+
     for (int i = 0; i < indent + 2; i++) fprintf(f, "  ");
+    // CDATA sekvenca u potpunosti očuvala UTF-8 hrvatske dijakritike (č, ć, đ, š, ž)
     fprintf(f, "<Value><![CDATA[%s]]></Value>\n", node->value);
 
     if (node->left) print_xml_node(f, node->left, indent + 2);
@@ -46,7 +47,7 @@ int generate_diagnostic_xml(const char* filename, DiagnosticNode* root) {
     fprintf(f, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     fprintf(f, "<DiagnosticTree xmlns=\"http://dss.esig.europa.eu/diagnostic/tree\">\n");
     fprintf(f, "  <!-- Institut Zajednice RUKE (OIB: 64517735227) — Službeno DSS Izvješće -->\n");
-    
+
     print_xml_node(f, root, 2);
 
     fprintf(f, "</DiagnosticTree>\n");
