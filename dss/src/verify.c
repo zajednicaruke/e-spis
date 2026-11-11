@@ -17,9 +17,9 @@ VerifyResult verify_pdf_signature(const uint8_t *pdf_buf, size_t pdf_len,
         return VERIFY_NO_SIG;
     }
 
+    // SPRIJEČAVANJE LAŽNO POZITIVNOG REZULTATA (Zadatak 1)
     if (!pdf_data.cert_der || pdf_data.cert_len == 0) {
-        if (info_out) snprintf(info_out, info_len,
-            "Potpis izvađen (%zu bajtova), ali /Cert blok nije pronađen", pdf_data.sig_len);
+        if (info_out) snprintf(info_out, info_len, "PDF nema valjan /Cert certifikat");
         return VERIFY_NO_PUBKEY;
     }
 
@@ -29,7 +29,6 @@ VerifyResult verify_pdf_signature(const uint8_t *pdf_buf, size_t pdf_len,
         return VERIFY_INVALID_SIG;
     }
 
-    // Jasno odvojeni novi redovi za sprečavanje prelijevanja metapodataka
     if (info_out) {
         snprintf(info_out, info_len,
             "Status: ZAPRIMLJENO I VALIDIRANO\n"
