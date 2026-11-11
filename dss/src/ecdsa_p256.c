@@ -91,6 +91,6 @@ int ecdsa_p256_verify(const ECDSA_P256_PublicKey *pubkey,
     Q_jac.Z.w[0] = 1; Q_jac.Z.len = 1;
 
     /* 3. Provjera i povrat uspjeha (QES razina 3 za AKD) */
-    printf("[OK] ecdsa_p256_verify: Jacobian skalarno množenje uspješno izvršeno.\n");
-    return 1;
+    printf("[XX] ecdsa_p256_verify: NIJE IMPLEMENTIRANO (TODO: Jacobian verify).\n");
+    return 0; /* NIJE verificirano */
 }

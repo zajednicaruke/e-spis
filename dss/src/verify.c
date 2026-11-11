@@ -30,14 +30,14 @@ VerifyResult verify_pdf_signature(const uint8_t *pdf_buf, size_t pdf_len,
 
     if (info_out) {
         snprintf(info_out, info_len,
-            "Status: ZAPRIMLJENO I VALIDIRANO\n"
+            "Status: CERTIFIKAT PARSIRAN (S3)\n"
             "Potpisnik: %s\n"
             "OIB: %s\n"
             "Izdavatelj: %s\n"
             "Valjan od: %s\n"
             "Valjan do: %s\n"
             "Serijski: %s\n"
-            "Kripto verify: OK (QES Razina 3)",
+            "Kripto verify: NIJE IZVRŠENO (U izradi P1-P3)",
             cert_info.subject_name, cert_info.oib, cert_info.issuer_name,
             cert_info.not_before, cert_info.not_after, cert_info.serial_number);
     }
