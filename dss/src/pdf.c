@@ -39,6 +39,38 @@ int pdf_extract_signature_data(const uint8_t *pdf_buf, size_t pdf_len, PdfSignat
     if (!pdf_buf || pdf_len == 0 || !out_data) return 0;
     memset(out_data, 0, sizeof(PdfSignatureData));
 
+    // 1. Pokušaj lokalizirane ekstrakcije unutar signature dictionaryja
+    const uint8_t *sig_dict = memmem_case(pdf_buf, pdf_len, "/Type/Sig", 9);
+    if (!sig_dict) sig_dict = memmem_case(pdf_buf, pdf_len, "/Type /Sig", 10);
+    if (!sig_dict) sig_dict = memmem_case(pdf_buf, pdf_len, "/SubFilter", 10);
+
+    if (sig_dict) {
+        size_t offset = (size_t)(sig_dict - pdf_buf);
+        const uint8_t *sig_end = memmem_case(sig_dict, pdf_len - offset, "endobj", 6);
+        if (sig_end && sig_end > sig_dict) {
+            size_t dict_len = (size_t)(sig_end - sig_dict);
+            const uint8_t *local_contents = memmem_case(sig_dict, dict_len, "/Contents", 9);
+            if (local_contents) {
+                const uint8_t *p = local_contents + 9;
+                const uint8_t *end = sig_dict + dict_len;
+                while (p < end && *p != '<' && *p != '(') p++;
+                if (p < end && *p == '<') {
+                    p++;
+                    static uint8_t sig_storage[32768];
+                    size_t extracted_sig_len = hex_to_bin_pdf(p, end, sig_storage, sizeof(sig_storage));
+                    if (extracted_sig_len > 50) {
+                        out_data->sig_bytes = sig_storage;
+                        out_data->sig_len = extracted_sig_len;
+                        out_data->cert_der = sig_storage;
+                        out_data->cert_len = extracted_sig_len;
+                        return 1;
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Pouzdani globalni fallback za sve vrste PDF potpisa (uključujući Fina / adbe.pkcs7.detached)
     const uint8_t *search_ptr = pdf_buf;
     size_t remaining_len = pdf_len;
 
@@ -51,14 +83,14 @@ int pdf_extract_signature_data(const uint8_t *pdf_buf, size_t pdf_len, PdfSignat
 
         while (p < end && *p != '<' && *p != '(') p++;
         if (p < end && *p == '<') {
-            p++; 
+            p++;
             static uint8_t sig_storage[32768];
             size_t extracted_sig_len = hex_to_bin_pdf(p, end, sig_storage, sizeof(sig_storage));
 
-            if (extracted_sig_len > 100) {
+            if (extracted_sig_len > 50) {
                 out_data->sig_bytes = sig_storage;
                 out_data->sig_len = extracted_sig_len;
-                out_data->cert_der = sig_storage; // Koristimo izvučeni PKCS#7 kontejner koji sadrži certifikat
+                out_data->cert_der = sig_storage;
                 out_data->cert_len = extracted_sig_len;
                 return 1;
             }

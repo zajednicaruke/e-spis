@@ -22,23 +22,6 @@ VerifyResult verify_pdf_signature(const uint8_t *pdf_buf, size_t pdf_len,
         return VERIFY_NO_PUBKEY;
     }
 
-    /* ZADATAK 1 FIX: Strogo lokalizirano traženje unutar signature block /Type/Sig do endobj */
-    const uint8_t *sig_dict = memmem_case(pdf_buf, pdf_len, "/Type/Sig", 9);
-    if (!sig_dict) sig_dict = memmem_case(pdf_buf, pdf_len, "/Type /Sig", 10);
-    
-    if (sig_dict) {
-        size_t offset = (size_t)(sig_dict - pdf_buf);
-        const uint8_t *sig_end = memmem_case(sig_dict, pdf_len - offset, "endobj", 6);
-        if (sig_end) {
-            size_t sig_len = (size_t)(sig_end - sig_dict);
-            const uint8_t *local_cert = memmem_case(sig_dict, sig_len, "/Cert", 5);
-            if (!local_cert && memmem_case(pdf_buf, pdf_len, "FINA", 4) == NULL) {
-                // Ako je Fina dokument, a /Cert nije u lokalnom bloku, osiguravamo da ne vuče AKD
-                // (Ovaj dio štiti od miješanja certifikata različitih CA izdavatelja)
-            }
-        }
-    }
-
     X509CertInfo cert_info;
     if (!x509_parse_cert(pdf_data.cert_der, pdf_data.cert_len, &cert_info)) {
         if (info_out) snprintf(info_out, info_len, "Neuspjelo parsiranje izvučenog X.509 certifikata");
