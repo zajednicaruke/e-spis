@@ -30,7 +30,7 @@ static void print_xml_node(FILE *f, DiagnosticNode *node, int indent) {
     fprintf(f, "<DiagnosticNode id=\"%d\" type=\"%d\" name=\"%s\">\n", node->id, node->type, node->name);
 
     for (int i = 0; i < indent + 2; i++) fprintf(f, "  ");
-    // CDATA sekvenca u potpunosti očuvala UTF-8 hrvatske dijakritike (č, ć, đ, š, ž)
+    // CDATA sekvenca u potpunosti čuva UTF-8 hrvatske dijakritike (č, ć, đ, š, ž)
     fprintf(f, "<Value><![CDATA[%s]]></Value>\n", node->value);
 
     if (node->left) print_xml_node(f, node->left, indent + 2);
@@ -40,9 +40,9 @@ static void print_xml_node(FILE *f, DiagnosticNode *node, int indent) {
     fprintf(f, "</DiagnosticNode>\n");
 }
 
-int generate_diagnostic_xml(const char* filename, DiagnosticNode* root) {
+void generate_diagnostic_xml(const char* filename, DiagnosticNode* root) {
     FILE *f = fopen(filename, "w");
-    if (!f) return 0;
+    if (!f) return;
 
     fprintf(f, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     fprintf(f, "<DiagnosticTree xmlns=\"http://dss.esig.europa.eu/diagnostic/tree\">\n");
@@ -52,5 +52,4 @@ int generate_diagnostic_xml(const char* filename, DiagnosticNode* root) {
 
     fprintf(f, "</DiagnosticTree>\n");
     fclose(f);
-    return 1;
 }
