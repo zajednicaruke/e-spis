@@ -97,3 +97,10 @@ data[y]
 .git-backup-*/
 .git-old-*/
 .git-backup-*
+
+# DSS & e-Spis osjetljivi lokalni artefakti (GDPR zaštita)
+dss/index.html
+dss/registar_akata.json
+dss/registar_akata_anon.json
+dss/*.disabled
+dss/publish_espis.sh
