@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DiagnosticTree xmlns="http://dss.esig.europa.eu/diagnostic/tree">
+    <Metadata>
+        <GeneratedAt>2026-11-11T09:55:16Z</GeneratedAt>
+        <Generator>C23-Native-DSSvalidator</Generator>
+        <Organization>Zajednica RUKE (OIB: 64517735227)</Organization>
+    </Metadata>
+    <TreeRoot>
+        <Node id="1" type="Category" code="ROOT_QES_VALIDATION">
+          <Description>Validacija kvalificiranog elektroničkog potpisa (QES)</Description>
+          <Branches>
+            <Branch direction="left">
+              <Node id="2" type="Question" code="Q_CERT_VALID">
+                <Description>Certifikat izdan za: Michael Golubičić (OIB: 64517735227) od AKD Qualified CA / Certilia QES</Description>
+                <Branches>
+                  <Branch direction="left">
+                    <Node id="4" type="Action" code="ACT_RSA_PKCS1">
+                      <Description>Uspješna RSA PKCS#1 v1.5 SHA-256 verifikacija</Description>
+                    </Node>
+                  </Branch>
+                  <Branch direction="right">
+                    <Node id="5" type="Action" code="ACT_ECDSA_P256">
+                      <Description>Uspješna ECDSA P-256 Jacobian verifikacija</Description>
+                    </Node>
+                  </Branch>
+                </Branches>
+              </Node>
+            </Branch>
+            <Branch direction="right">
+              <Node id="3" type="Question" code="Q_REVOCATION">
+                <Description>Provjera statusa opoziva (CRL/OCSP valjanost)</Description>
+                <Branches>
+                  <Branch direction="left">
+                    <Node id="6" type="Action" code="ACT_OCSP_OK">
+                      <Description>OCSP odgovor potvrdio aktivni status</Description>
+                    </Node>
+                  </Branch>
+                  <Branch direction="right">
+                    <Node id="7" type="Action" code="ACT_TRUST_ANCHOR">
+                      <Description>Lanac povjerenja povezan s EU Trusted List (EUTL)</Description>
+                    </Node>
+                  </Branch>
+                </Branches>
+              </Node>
+            </Branch>
+          </Branches>
+        </Node>
+    </TreeRoot>
+</DiagnosticTree>

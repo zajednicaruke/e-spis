@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DiagnosticTree xmlns="http://dss.esig.europa.eu/diagnostic/tree">
+    <Metadata>
+        <GeneratedAt>2026-11-11T10:20:19Z</GeneratedAt>
+        <Generator>C23-Native-DSSvalidator</Generator>
+        <Organization>Zajednica RUKE (OIB: 64517735227)</Organization>
+    </Metadata>
+    <TreeRoot>
+        <Node id="1" type="Category" code="ROOT_REAL_PDF_VALIDATION">
+          <Description>Stvarna PDF QES validacija (Zajednica RUKE)</Description>
+          <Branches>
+            <Branch direction="left">
+              <Node id="2" type="Question" code="Q_PDF_CERT">
+                <Description>PDF Parser: Nije pronađen valjan /Contents potpis</Description>
+                <Branches>
+                  <Branch direction="left">
+                    <Node id="4" type="Action" code="ACT_EXTRACT_CERT">
+                      <Description>Derivirani DER certifikat uspješno izvučen iz /Cert bloka</Description>
+                    </Node>
+                  </Branch>
+                  <Branch direction="right">
+                    <Node id="5" type="Action" code="ACT_CRYPTO_VERIFY">
+                      <Description>Provjera potpisa u tijeku / Nepodržan format</Description>
+                    </Node>
+                  </Branch>
+                </Branches>
+              </Node>
+            </Branch>
+            <Branch direction="right">
+              <Node id="3" type="Question" code="Q_PDF_REV">
+                <Description>Provjera opoziva prema EUTL i OCSP/CRL servisima</Description>
+              </Node>
+            </Branch>
+          </Branches>
+        </Node>
+    </TreeRoot>
+</DiagnosticTree>

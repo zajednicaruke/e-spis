@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DiagnosticTree xmlns="http://dss.esig.europa.eu/diagnostic/tree">
+    <Metadata>
+        <GeneratedAt>2026-11-11T09:28:48Z</GeneratedAt>
+        <Generator>C23-Native-DSSvalidator</Generator>
+    </Metadata>
+    <TreeRoot>
+        <Node id="1" type="Category" code="ROOT_DSS_VALIDATION">
+          <Description>Glavna EU DSS validacija QES potpisa</Description>
+          <Branches>
+            <Branch direction="left">
+              <Node id="2" type="Question" code="Q_CERT">
+                <Description>Je li X.509 certifikat kriptografski valjan?</Description>
+                <Branches>
+                  <Branch direction="left">
+                    <Node id="4" type="Action" code="ACT_VERIFY_RSA">
+                      <Description>Izvršena RSA SHA-256 verifikacija potpisa (Fina/AKD)</Description>
+                    </Node>
+                  </Branch>
+                  <Branch direction="right">
+                    <Node id="5" type="Action" code="ACT_VERIFY_ECDSA">
+                      <Description>Izvršena ECDSA P-256 Jacobian verifikacija</Description>
+                    </Node>
+                  </Branch>
+                </Branches>
+              </Node>
+            </Branch>
+            <Branch direction="right">
+              <Node id="3" type="Question" code="Q_REV">
+                <Description>Je li certifikat opozvan (OCSP/CRL provjera)?</Description>
+                <Branches>
+                  <Branch direction="left">
+                    <Node id="6" type="Action" code="ACT_ONLINE_CHECK">
+                      <Description>Mrežna provjera statusa valjanosti</Description>
+                    </Node>
+                  </Branch>
+                  <Branch direction="right">
+                    <Node id="7" type="Action" code="ACT_LOCAL_TRUST">
+                      <Description>Lokalno povjerenje prema korijenskom CA</Description>
+                    </Node>
+                  </Branch>
+                </Branches>
+              </Node>
+            </Branch>
+          </Branches>
+        </Node>
+    </TreeRoot>
+</DiagnosticTree>
