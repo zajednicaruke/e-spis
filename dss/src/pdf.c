@@ -215,3 +215,84 @@ void pdf_generiraj(const char *putanja, const char *tekst_izvjestaja, size_t tek
     fprintf(f, "trailer\n<</Size %d/Root 1 0 R>>\nstartxref\n%ld\n%%%%EOF\n", total_objs + 1, startxref);
     fclose(f);
 }
+
+/* ============================================================
+ * P1.1 — /ByteRange parser
+ * ============================================================ */
+int pdf_extract_byterange(const uint8_t *pdf_buf, size_t pdf_len,
+                           PdfByteRange *out) {
+    if (!pdf_buf || pdf_len == 0 || !out) return 0;
+    memset(out, 0, sizeof(*out));
+
+    void *p = memmem_case(pdf_buf, pdf_len, "/ByteRange", 10);
+    if (!p) return 0;
+
+    const uint8_t *q = (const uint8_t*)p + 10;
+    const uint8_t *end = pdf_buf + pdf_len;
+
+    while (q < end && (*q == ' ' || *q == '\r' || *q == '\n' || *q == '\t')) q++;
+    if (q >= end || *q != '[') return 0;
+    q++;
+
+    size_t numbers[4] = {0};
+    int num_count = 0;
+    size_t current = 0;
+    int has_digit = 0;
+
+    while (q < end && num_count < 4) {
+        if (*q >= '0' && *q <= '9') {
+            current = current * 10 + (*q - '0');
+            has_digit = 1;
+            q++;
+        } else if (*q == ' ' || *q == '\r' || *q == '\n' || *q == '\t') {
+            if (has_digit) {
+                numbers[num_count++] = current;
+                current = 0;
+                has_digit = 0;
+            }
+            q++;
+        } else if (*q == ']') {
+            if (has_digit) {
+                numbers[num_count++] = current;
+            }
+            break;
+        } else {
+            return 0;
+        }
+    }
+
+    if (num_count != 4) return 0;
+
+    out->range1_start = numbers[0];
+    out->range1_len   = numbers[1];
+    out->range2_start = numbers[2];
+    out->range2_len   = numbers[3];
+    out->valjan       = 1;
+
+    if (out->range1_start + out->range1_len > pdf_len) return 0;
+    if (out->range2_start + out->range2_len > pdf_len) return 0;
+    if (out->range2_start < out->range1_start + out->range1_len) return 0;
+
+    return 1;
+}
+
+int pdf_reconstruct_signed_content(const uint8_t *pdf_buf, size_t pdf_len,
+                                    const PdfByteRange *br,
+                                    uint8_t **out, size_t *out_len) {
+    if (!pdf_buf || !br || !br->valjan || !out || !out_len) return 0;
+
+    size_t total_len = br->range1_len + br->range2_len;
+    if (total_len == 0) return 0;
+
+    uint8_t *buf = malloc(total_len);
+    if (!buf) return 0;
+
+    memcpy(buf, pdf_buf + br->range1_start, br->range1_len);
+    memcpy(buf + br->range1_len, pdf_buf + br->range2_start, br->range2_len);
+
+    *out = buf;
+    *out_len = total_len;
+    (void)pdf_len;
+
+    return 1;
+}

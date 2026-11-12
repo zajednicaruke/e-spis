@@ -1,3 +1,4 @@
+#include "src_c23/pin_hashes.h"
 /* TETRA-165 */
 /* SIMETRIJA-LOGOTIPA */
 /* OPTION-V2 */
@@ -148,11 +149,11 @@ int main(void) {
     fprintf(fhtml, "    }\n");
     fprintf(fhtml, "}\n");
     fprintf(fhtml, "const clanoviBaza = {\n");
-    fprintf(fhtml, "    'zastupnik': { ime: 'Ovlašteni zastupnik', uloga: 'Zastupnik', pin: '3PutSvet!' },\n");
-    fprintf(fhtml, "    'redovni': { ime: 'Redovni član', uloga: 'Član', pin: 'Clan2026!' },\n");
-    fprintf(fhtml, "    'pridruzeni': { ime: 'Pridruženi član', uloga: 'Pridruženi', pin: 'Pridruzeni2026!' },\n");
-    fprintf(fhtml, "    'pocasni': { ime: 'Počasni član', uloga: 'Počasni', pin: 'Pocasni2026!' },\n");
-    fprintf(fhtml, "    'ugovorni': { ime: 'Ugovorni suradnik', uloga: 'Suradnik', pin: 'Ugovor2026!' }\n");
+    fprintf(fhtml, "    'zastupnik': { ime: 'Ovlašteni zastupnik', uloga: 'Zastupnik', pin: '" HASH_PIN_ADMIN "' },\n");
+    fprintf(fhtml, "    'redovni': { ime: 'Redovni član', uloga: 'Član', pin: '" HASH_PIN_REDOVNI "' },\n");
+    fprintf(fhtml, "    'pridruzeni': { ime: 'Pridruženi član', uloga: 'Pridruženi', pin: '" HASH_PIN_PRIDRUZENI "' },\n");
+    fprintf(fhtml, "    'pocasni': { ime: 'Počasni član', uloga: 'Počasni', pin: '" HASH_PIN_POCASNI "' },\n");
+    fprintf(fhtml, "    'ugovorni': { ime: 'Ugovorni suradnik', uloga: 'Suradnik', pin: '" HASH_PIN_UGOVORNI "' }\n");
     fprintf(fhtml, "};\n"); /* JS-SYNTAX-FIXED */
     fprintf(fhtml, "function provjeriClanPin() {\n");
     fprintf(fhtml, "    const sel = document.getElementById('clan-select').value;\n");

@@ -1,80 +1,75 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
+#include <unistd.h>
+#include <sys/stat.h>
 #include "scan.h"
-#include "util.h"
 #include "report.h"
 #include "pdf.h"
 
-int main(void) {
-    printf("=================================================================\n");
-    printf("  ZASLONSKI SUSTAV e-SPISA — /DSSvalidator v4.9\n");
-    printf("  Institut Zajednice RUKE (OIB: 64517735227)\n");
-    printf("=================================================================\n");
-
-    char unos[256];
-    printf("Unesite naziv glavnog foldera (npr. 01 HEP):\n> ");
-    fflush(stdout);
-
-    if (!fgets(unos, sizeof(unos), stdin)) {
-        return EXIT_FAILURE;
+static void ukloni_novi_red(char *s) {
+    size_t len = strlen(s);
+    while (len > 0 && (s[len - 1] == '\n' || s[len - 1] == '\r' || s[len - 1] == ' ' || s[len - 1] == '\t')) {
+        s[--len] = '\0';
     }
-    unos[strcspn(unos, "\r\n")] = 0;
+}
 
-    if (unos[0] == '\0') {
-        printf("Prazan unos.\n");
-        return EXIT_FAILURE;
-    }
+int main(int argc, char **argv) {
+    char unos[1024] = {0};
+    char dirpath[2048] = {0};
+    char out_pdf[2300] = {0};
 
-    report_init();
-
-    char zbirni_sha256[65] = {0};
-    long long ukupna_kolicina = 0;
-    int ukupno = 0;
-    char zadnji[512] = {0};
-    int pronadjeno = 0;
-
-    const char *baze[] = {"/sdcard", "/sdcard/Download", NULL};
-
-    for (int i = 0; baze[i]; i++) {
-        char putanja[512];
-        snprintf(putanja, sizeof(putanja), "%s/%s", baze[i], unos);
-
-        Scan_Rezultat rez;
-        scan_direktorij(putanja, &rez);
-
-        if (rez.broj_dokumenata > 0) {
-            pronadjeno = 1;
-            ukupno += rez.broj_dokumenata;
-            ukupna_kolicina += rez.ukupna_kolicina;
-            strncpy(zbirni_sha256, rez.zbirni_hash, sizeof(zbirni_sha256) - 1);
-
-            // Ispravno prosljeđivanje numeričke veličine u bajtovima (long)
-            report_dodaj_zbirni(putanja, rez.zbirni_hash, rez.broj_dokumenata, (long)rez.ukupna_kolicina);
-
-            snprintf(zadnji, sizeof(zadnji), "%s/Nalaz_Validacije_Zajednica_RUKE.pdf", putanja);
-            
-            // Eksplicitno generiranje PDF-a odmah po obradi foldera
-            pdf_generiraj(zadnji, report_buf(), report_len());
-            break;
+    if (argc > 1 && argv[1][0] != '\0') {
+        snprintf(unos, sizeof(unos), "%s", argv[1]);
+    } else {
+        if (isatty(STDIN_FILENO)) {
+            printf("Unesite naziv mape na /sdcard (npr. 01 HEP): ");
+            fflush(stdout);
+        }
+        if (!fgets(unos, sizeof(unos), stdin)) {
+            fprintf(stderr, "[XX] Nije unesen naziv mape.\n");
+            return 1;
         }
     }
 
-    if (!pronadjeno) {
-        printf("\nNijedan folder u /sdcard ne sadrzi: '%s'\n", unos);
-        return EXIT_FAILURE;
+    ukloni_novi_red(unos);
+    if (unos[0] == '\0') {
+        fprintf(stderr, "[XX] Prazan unos mape.\n");
+        return 1;
     }
 
-    printf("-----------------------------------------------------------------\n");
-    if (zadnji[0]) {
-        printf("📄 PDF NALAZ GENERIRAN: %s\n", zadnji);
+    if (unos[0] == '/') {
+        snprintf(dirpath, sizeof(dirpath), "%s", unos);
+    } else {
+        snprintf(dirpath, sizeof(dirpath), "/sdcard/%s", unos);
     }
-    printf("Ukupno validirano dokumenata:  %d\n", ukupno);
-    char uk_vel[32];
-    fmt_size(ukupna_kolicina, uk_vel);
-    printf("Ukupna velicina kolekcije:     %s\n", uk_vel);
-    printf("=================================================================\n");
 
-    return EXIT_SUCCESS;
+    struct stat st;
+    if (stat(dirpath, &st) != 0 || !S_ISDIR(st.st_mode)) {
+        fprintf(stderr, "[XX] Mapa ne postoji ili nije dostupna: %s\n", dirpath);
+        return 1;
+    }
+
+    printf("========================================================================\n");
+    printf("  Zajednica RUKE — DSSvalidator v5.0 (C23 Sovereign Engine)             \n");
+    printf("  Skeniranje mape: %s\n", dirpath);
+    printf("========================================================================\n");
+
+    report_init();
+
+    Scan_Rezultat rez;
+    memset(&rez, 0, sizeof(rez));
+    scan_direktorij(dirpath, &rez);
+
+    report_dodaj_zbirni(dirpath, rez.zbirni_hash, rez.broj_dokumenata, (long)rez.ukupna_kolicina);
+
+    snprintf(out_pdf, sizeof(out_pdf), "%s/Nalaz_Validacije_Zajednica_RUKE.pdf", dirpath);
+    pdf_generiraj(out_pdf, report_buf(), report_len());
+
+    printf("[OK] Obradeno akata: %d (%lld bajtova)\n", rez.broj_dokumenata, rez.ukupna_kolicina);
+    printf("[OK] Zbirni SHA-256: %s\n", rez.zbirni_hash);
+    printf("[OK] Generiran nalaz: %s\n", out_pdf);
+    printf("========================================================================\n");
+
+    return 0;
 }
