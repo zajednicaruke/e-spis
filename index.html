@@ -16,19 +16,21 @@
     .card h2 { font-size: 1.05rem; color: #60a5fa; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
     .badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; }
     .badge-ok { background: rgba(16,185,129,0.15); color: var(--ok); border: 1px solid var(--ok); }
-    .badge-warn { background: rgba(245,158,11,0.15); color: var(--warn); border: 1px solid var(--warn); }
     .badge-err { background: rgba(239,68,68,0.15); color: var(--err); border: 1px solid var(--err); }
     .hash-box { background: #030712; border: 1px solid #374151; border-radius: 8px; padding: 10px; font-family: monospace; font-size: 0.82rem; word-break: break-all; color: #38bdf8; margin: 8px 0; }
     .qr-grid { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; }
     .qr-canvas-wrap { background: #fff; padding: 10px; border-radius: 8px; display: inline-block; }
     .drop-zone { border: 2px dashed #374151; border-radius: 10px; padding: 24px; text-align: center; cursor: pointer; transition: 0.2s; }
     .drop-zone:hover { border-color: var(--accent); background: rgba(59,130,246,0.05); }
-    .btn { background: var(--accent); color: #fff; border: none; padding: 10px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.85rem; margin-top: 10px; }
+    .btn { background: var(--accent); color: #fff; border: none; padding: 10px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.85rem; margin-top: 10px; display: inline-block; text-decoration: none; }
     .btn:hover { background: #2563eb; }
     .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 12px; }
     .stat { background: #030712; padding: 12px; border-radius: 8px; border: 1px solid #1f2937; }
     .stat span { display: block; font-size: 0.75rem; color: var(--muted); }
     .stat strong { font-size: 0.9rem; color: #fff; }
+    .file-list { list-style: none; margin-top: 10px; }
+    .file-list li { display: flex; justify-content: space-between; align-items: center; background: #030712; border: 1px solid #1f2937; padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; }
+    .file-list span { font-size: 0.85rem; font-family: monospace; color: #cbd5e1; }
     .hidden { display: none; }
   </style>
 </head>
@@ -39,6 +41,23 @@
     <p>OIB: 64517735227 | Deterministička LSBU / C23 &amp; eIDAS PAdES-B-LTA Validacija</p>
   </header>
 
+  <div class="card">
+    <h2>📁 Službeni Akti i Nalazi Validacije za Preuzimanje</h2>
+    <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 12px;">
+      Preuzmite službene PDF nalaze, zapisnike i QR omotnice generirane od strane asemblerskog motora DSSvalidator2.
+    </p>
+    <ul class="file-list">
+      <li>
+        <span>📄 Nalaz_Validacije_Zajednica_RUKE.pdf</span>
+        <a href="akti/Nalaz_Validacije_Zajednica_RUKE.pdf" class="btn" style="margin-top:0; padding:6px 12px;">Preuzmi PDF</a>
+      </li>
+      <li>
+        <span>📋 QR_Validacija_Zapisnik.txt</span>
+        <a href="akti/QR_Validacija_Zapisnik.txt" class="btn" style="margin-top:0; padding:6px 12px;">Preuzmi Zapisnik</a>
+      </li>
+    </ul>
+  </div>
+
   <div id="qr-incoming-card" class="card hidden">
     <h2>📲 Očitani QR Validacijski Zahtjev (Model Omotnice)</h2>
     <div class="qr-grid">
@@ -47,7 +66,7 @@
         <p style="font-size: 0.85rem; color: var(--muted); margin-top: 8px;">Očekivani SHA-256 sažetak iz QR koda:</p>
         <div id="expected-hash" class="hash-box">-</div>
         <p style="font-size: 0.85rem;">Kontrolni kod akta: <strong id="expected-ctrl" style="color: #10b981;">-</strong></p>
-        <button class="btn" onclick="preuzmiPotvrdu()">⬇️ Preuzmi QR Validacijski Zapisnik (.txt)</button>
+        <button class="btn" onclick="preuzmiPotvrdu()">⬇️ Preuzmi QR Potvrdu (.txt)</button>
       </div>
       <div class="qr-canvas-wrap">
         <canvas id="qr-canvas" width="160" height="160"></canvas>
@@ -58,11 +77,11 @@
   <div class="card">
     <h2>🔍 Lokalna Forenzička Verifikacija Dokumenta (Zero-Server Exfiltration)</h2>
     <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 12px;">
-      Učitajte izvorni PDF ili tekstualni akt izravno u memoriju preglednika. Sustav lokalno računa FIPS 180-4 SHA-256, uspoređuje ga s QR otiskom i provjerava PAdES-B-LTA strukturu (/ByteRange, /DSS, /DocTimeStamp).
+      Učitajte izvorni PDF ili tekstualni akt izravno u memoriju preglednika radi lokalne FIPS 180-4 SHA-256 verifikacije.
     </p>
     <div class="drop-zone" onclick="document.getElementById('file-input').click()">
       <input type="file" id="file-input" class="hidden">
-      <p style="font-weight: bold;">Kliknite ili ispustite dokument za trenutačnu kriptografsku provjeru</p>
+      <p style="font-weight: bold;">Kliknite ili ispustite dokument za trenutačnu provjeru</p>
       <p style="font-size: 0.78rem; color: var(--muted); margin-top: 4px;">100% lokalna obrada putem WebCrypto API-ja</p>
     </div>
 
@@ -144,11 +163,14 @@
     const hasTs = raw.includes('/Type /DocTimeStamp') || raw.includes('/Type/DocTimeStamp');
     const hasQes = raw.includes('ETSI.CAdES') || raw.includes('adbe.pkcs7');
 
-    let level = 'Dokument bez QES-a';
-    if (hasQes && hasDss && hasTs) level = '✅ PAdES-B-LTA (QES + DSS + QTSA)';
-    else if (hasQes && hasDss) level = '✅ PAdES-B-LT (QES + DSS)';
-    else if (hasQes) level = '✅ S4 QES Verificiran';
-    else if (br > 0) level = '⚠️ S3 (Samo ByteRange)';
+    let level = 'Nije QES potpisani PDF';
+    if (raw.startsWith('%PDF-')) {
+      if (hasQes && hasDss && hasTs) level = '✅ PAdES-B-LTA (QES + DSS + QTSA)';
+      else if (hasQes && hasDss) level = '✅ PAdES-B-LT (QES + DSS)';
+      else if (hasQes) level = '✅ S4 QES Verificiran';
+      else if (br > 0) level = '⚠️ S3 (Samo ByteRange)';
+      else level = '📄 PDF (Nema digitalnog potpisa)';
+    }
 
     const banner = document.getElementById('match-banner');
     if (urlSha256.length === 64) {
