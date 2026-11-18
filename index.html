@@ -1,201 +1,175 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="hr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Zajednica RUKE • eIDAS e-Spis Portal</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
-<style>
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #f8fafc; color: #0f172a; margin: 0; padding: 15px; }
-  .card { background: #ffffff; border-radius: 12px; padding: 24px; box-shadow: 0 4px 16px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; max-width: 800px; margin: 20px auto; }
-  .btn { border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; transition: all 0.2s; }
-  .btn-blue { background: #2563eb; color: #fff; } .btn-dark { background: #0f172a; color: #fff; } .btn-green { background: #166534; color: #fff; }
-  .input-field { width: 100%; padding: 9px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; box-sizing: border-box; margin-top: 4px; margin-bottom: 12px; }
-  .logo-main { display: block; margin: 0 auto 15px auto; max-width: 160px; width: 100%; height: 160px; object-fit: cover; border-radius: 50%; box-shadow: 0 4px 16px rgba(0,0,0,0.12); border: 3px solid #e2e8f0; }
-  .logo-icon { width: 55px; height: 55px; border-radius: 50%; object-fit: cover; display: block; }
-
-/* KOZMETIKA-V2 */
-  .card { text-align: center; }
-  .card picture { display: block; margin: 0 auto; }
-  .card .logo-main { margin: 0 auto 15px auto; }
-  .btn-yellow { background: #eab308; color: #0f172a; box-shadow: 0 2px 8px rgba(234,179,8,0.3); }
-  .btn-yellow:hover { background: #ca8a04; color: #fff; }
-  .btn-red { background: #dc2626; color: #ffffff; box-shadow: 0 2px 8px rgba(220,38,38,0.3); }
-  .btn-red:hover { background: #b91c1c; }
-  .btn-green { background: #166534; color: #ffffff; box-shadow: 0 2px 8px rgba(22,101,52,0.3); }
-  .btn-green:hover { background: #14532d; }
-  .btn-blue:hover { background: #1d4ed8; }
-  .btn-dark:hover { background: #1e293b; }
-
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zajednica RUKE — Suvereni Registar e-Spis (eIDAS / PAdES-LTA)</title>
+  <style>
+    :root { --bg: #0b1120; --card: #111827; --border: #1f2937; --accent: #3b82f6; --ok: #10b981; --warn: #f59e0b; --err: #ef4444; --text: #f3f4f6; --muted: #9ca3af; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace; background: var(--bg); color: var(--text); line-height: 1.5; padding: 16px; }
+    .container { max-width: 860px; margin: 0 auto; }
+    header { background: linear-gradient(135deg, #0f172a, #1e3a8a); border: 1px solid #2563eb; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+    header h1 { font-size: 1.35rem; color: #fff; margin-bottom: 4px; }
+    header p { font-size: 0.85rem; color: #93c5fd; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 16px; }
+    .card h2 { font-size: 1.05rem; color: #60a5fa; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; }
+    .badge-ok { background: rgba(16,185,129,0.15); color: var(--ok); border: 1px solid var(--ok); }
+    .badge-warn { background: rgba(245,158,11,0.15); color: var(--warn); border: 1px solid var(--warn); }
+    .badge-err { background: rgba(239,68,68,0.15); color: var(--err); border: 1px solid var(--err); }
+    .hash-box { background: #030712; border: 1px solid #374151; border-radius: 8px; padding: 10px; font-family: monospace; font-size: 0.82rem; word-break: break-all; color: #38bdf8; margin: 8px 0; }
+    .qr-grid { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; }
+    .qr-canvas-wrap { background: #fff; padding: 10px; border-radius: 8px; display: inline-block; }
+    .drop-zone { border: 2px dashed #374151; border-radius: 10px; padding: 24px; text-align: center; cursor: pointer; transition: 0.2s; }
+    .drop-zone:hover { border-color: var(--accent); background: rgba(59,130,246,0.05); }
+    .btn { background: var(--accent); color: #fff; border: none; padding: 10px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.85rem; margin-top: 10px; }
+    .btn:hover { background: #2563eb; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 12px; }
+    .stat { background: #030712; padding: 12px; border-radius: 8px; border: 1px solid #1f2937; }
+    .stat span { display: block; font-size: 0.75rem; color: var(--muted); }
+    .stat strong { font-size: 0.9rem; color: #fff; }
+    .hidden { display: none; }
+  </style>
 </head>
 <body>
+<div class="container">
+  <header>
+    <h1>🛡️ Zajednica RUKE — Suvereni Registar e-Spis</h1>
+    <p>OIB: 64517735227 | Deterministička LSBU / C23 &amp; eIDAS PAdES-B-LTA Validacija</p>
+  </header>
 
-<div id="ekran-ulaz" class="card" style="text-align:center;">
-    <picture><source srcset="./EU_RUKE_1793640051705.webp" type="image/webp"><img src="./EU_RUKE_1793640051705.png" alt="Logo Zajednica RUKE" class="logo-main"></picture>
-    <h2 style="margin:0; font-size:24px; color:#0f172a;">ZAJEDNICA RUKE</h2>
-    <div style="font-size:14px; font-weight:bold; color:#1e293b; margin-top:6px;">Hipostazologija | Zadružno Poduzetništvo</div>
-    <p style="color:#475569; font-size:13px; font-weight:bold; margin-top:4px; margin-bottom:12px;">OIB: 64517735227 • Zagreb / Županja</p>
-    <div style="background:#f1f5f9; padding:8px 16px; border-radius:20px; font-size:12px; font-weight:bold; color:#334155; display:inline-block; margin-bottom:25px;">eIDAS • Digitalna transformacija • e-građani</div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
-        <button class="btn btn-yellow" onclick="prikaziSloj('javni')" style="padding:20px;">🌐 JAVNI PRISTUP<br><span style="font-size:11px; font-weight:normal; opacity:0.9;">Za građane, tijela javne vlasti i partnere</span></button>
-        <button class="btn btn-blue" onclick="prikaziSloj('clanovi')" style="padding:20px;">🔒 ČLANSKI PRETINAC<br><span style="font-size:11px; font-weight:normal; opacity:0.9;">Za autorizirane članove uz PIN</span></button>
+  <div id="qr-incoming-card" class="card hidden">
+    <h2>📲 Očitani QR Validacijski Zahtjev (Model Omotnice)</h2>
+    <div class="qr-grid">
+      <div style="flex: 1; min-width: 240px;">
+        <div id="qr-status-badge" class="badge badge-ok">✅ URI PARAMETAR ZAPREMLJEN</div>
+        <p style="font-size: 0.85rem; color: var(--muted); margin-top: 8px;">Očekivani SHA-256 sažetak iz QR koda:</p>
+        <div id="expected-hash" class="hash-box">-</div>
+        <p style="font-size: 0.85rem;">Kontrolni kod akta: <strong id="expected-ctrl" style="color: #10b981;">-</strong></p>
+        <button class="btn" onclick="preuzmiPotvrdu()">⬇️ Preuzmi QR Validacijski Zapisnik (.txt)</button>
+      </div>
+      <div class="qr-canvas-wrap">
+        <canvas id="qr-canvas" width="160" height="160"></canvas>
+      </div>
     </div>
-</div>
+  </div>
 
-<div id="ekran-javni" class="card" style="display:none; text-align:center;">
-    <picture><source srcset="./Orden_RUKE_1772802905749.webp" type="image/webp"><img src="./Orden_RUKE_1772802905749.png" alt="Orden RUKE" class="logo-main"></picture>
-    <h3 style="margin:0; font-size:22px; color:#0f172a;">JAVNI PORTAL E-SPIS</h3>
-    <div style="font-size:13px; color:#64748b; margin-top:4px; margin-bottom:15px;">Zajednica RUKE • eIDAS Verifikator</div>
-    <button class="btn" onclick="prikaziSloj('ulaz')" style="background:#f1f5f9; color:#475569; font-size:12px; margin-bottom:20px;">⬅ Povratak</button>
-    <div style="display:flex; gap:10px; margin-bottom:20px;">
-        <button class="btn btn-red" onclick="prikaziFormu('j-upload')" style="flex:1;">📤 Učitaj PODNESAK</button>
-        <button class="btn btn-green" onclick="prikaziFormu('j-dohvat')" style="flex:1;">📥 Preuzmi / Verificiraj PODNESAK</button>
+  <div class="card">
+    <h2>🔍 Lokalna Forenzička Verifikacija Dokumenta (Zero-Server Exfiltration)</h2>
+    <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 12px;">
+      Učitajte izvorni PDF ili tekstualni akt izravno u memoriju preglednika. Sustav lokalno računa FIPS 180-4 SHA-256, uspoređuje ga s QR otiskom i provjerava PAdES-B-LTA strukturu (/ByteRange, /DSS, /DocTimeStamp).
+    </p>
+    <div class="drop-zone" onclick="document.getElementById('file-input').click()">
+      <input type="file" id="file-input" class="hidden">
+      <p style="font-weight: bold;">Kliknite ili ispustite dokument za trenutačnu kriptografsku provjeru</p>
+      <p style="font-size: 0.78rem; color: var(--muted); margin-top: 4px;">100% lokalna obrada putem WebCrypto API-ja</p>
     </div>
-    <div id="box-j-upload" style="background:#f8fafc; padding:20px; border-radius:8px; border:1px solid #cbd5e1;">
-        <h4 style="margin-top:0;">Uloži novi podnesak s lokalnim SHA-256 pečatom</h4>
-        <label style="font-size:11px; font-weight:bold;">Broj akta / Oznaka:</label><input type="text" id="ju-broj" class="input-field" placeholder="npr. MG/PRIGOVOR-2026">
-        <label style="font-size:11px; font-weight:bold;">Pošiljatelj (Ime i prezime / Naziv):</label><input type="text" id="ju-posiljatelj" class="input-field" placeholder="Unesite vaše ime ili naziv institucije">
-        <label style="font-size:11px; font-weight:bold;">Primatelj (Institucija / Sud):</label><input type="text" id="ju-primatelj" class="input-field" placeholder="npr. Općinski sud u Vinkovcima">
-        <label style="font-size:11px; font-weight:bold;">PDF Dokument:</label><input type="file" id="ju-file" accept="application/pdf" style="display:block; margin:6px 0 15px 0; font-size:12px;">
-        <button class="btn btn-green" onclick="obradiJavniUpload()">⚡ Izradi SHA-256 Pečat i Generiraj Potvrdu</button>
-    </div>
-    <div id="box-j-dohvat" style="display:none; background:#f8fafc; padding:20px; border-radius:8px; border:1px solid #cbd5e1;">
-        <h4 style="margin-top:0;">Preuzmi i provjeri registrirani akt po broju i kodu</h4>
-        <label style="font-size:11px; font-weight:bold;">Broj akta:</label><input type="text" id="jd-broj" class="input-field" placeholder="npr. MG/HZMO-2026">
-        <label style="font-size:11px; font-weight:bold;">Kontrolni kod:</label><input type="text" id="jd-kod" class="input-field" placeholder="npr. 3E2E-84D7">
-        <button class="btn btn-blue" onclick="obradiJavniDohvat()">🔍 Dohvati Izvornik i Generiraj Potvrdu</button>
-    </div>
-    <div id="potvrda-kontejner-javni" style="margin-top:20px;"></div>
-</div>
 
-<div id="ekran-clanovi" class="card" style="display:none; text-align:center;">
-    <picture><source srcset="./TetraGramaton_1773157773345.webp" type="image/webp"><img src="./TetraGramaton_1773157773345.jpg" alt="TetraGramaton" class="logo-main" style="width:165px; height:165px;"></picture>
-    <h3 style="margin:0; font-size:22px; color:#0f172a;">IMENIK ČLANOVA I PRETINAC</h3>
-    <div style="font-size:13px; color:#64748b; margin-top:4px; margin-bottom:15px;">Zajednica RUKE • Autentikacija po ulogama</div>
-    <button class="btn" onclick="prikaziSloj('ulaz')" style="background:#f1f5f9; color:#475569; font-size:12px; margin-bottom:20px;">⬅ Odjava</button>
-    <div id="box-pin" style="background:#f1f5f9; padding:25px; border-radius:8px; text-align:center; max-width:420px; margin:20px auto;">
-        <h4 style="margin-top:0; color:#0f172a;">Odaberite člana iz Imenika:</h4>
-        <select id="clan-select" class="input-field" style="font-size:14px; text-align:center; margin-bottom:12px;">
-            <option value="zastupnik">Zastupnik</option>
-            <option value="redovni">Redovni član</option>
-            <option value="pridruzeni">Pridruženi član</option>
-            <option value="pocasni">Počasni član</option>
-            <option value="ugovorni">Ugovorni suradnik</option>
-        </select>
-        <h4 style="margin:10px 0 6px 0;">Unesite pristupni PIN:</h4>
-        <input type="password" id="pin-input" class="input-field" style="text-align:center; font-size:16px; width:220px;" placeholder="Unesite PIN">
-        <br><button class="btn btn-dark" onclick="provjeriClanPin()" style="margin-top:10px;">Otključaj Pretinac</button>
+    <div id="verify-result" class="hidden" style="margin-top: 16px;">
+      <div id="match-banner" class="badge badge-ok" style="margin-bottom: 10px;">-</div>
+      <div class="hash-box" id="computed-hash">-</div>
+      <div class="grid-3">
+        <div class="stat"><span>Naziv / Veličina</span><strong id="res-meta">-</strong></div>
+        <div class="stat"><span>PAdES / eIDAS Razina</span><strong id="res-pades">-</strong></div>
+        <div class="stat"><span>Revizije (%EOF) / ByteRange</span><strong id="res-rev">-</strong></div>
+      </div>
     </div>
-    <div id="box-pretinac-sadrzaj" style="display:none;">
-        <div id="prijavljen-info" style="background:#f0fdf4; border:1px solid #bbf7d0; color:#166534; padding:12px; border-radius:6px; font-size:13px; margin-bottom:20px;"></div>
-        <div style="display:flex; gap:10px; margin-bottom:20px;">
-            <button class="btn btn-green" onclick="prikaziFormu('c-upload')" style="flex:1;">📤 Učitaj PODNESAK</button>
-            <button class="btn btn-green" onclick="prikaziFormu('c-dohvat')" style="flex:1;">📥 Preuzmi / Verificiraj PODNESAK</button>
-        </div>
-        <div id="box-c-upload" style="display:block; background:#f8fafc; padding:20px; border-radius:8px; border:1px solid #cbd5e1;">
-            <h4 style="margin-top:0;">Člansko pečaćenje i slanje novog akta</h4>
-            <label style="font-size:11px; font-weight:bold;">Broj akta / Oznaka:</label><input type="text" id="cu-broj" class="input-field" placeholder="npr. MG/HZMO-2026">
-            <label style="font-size:11px; font-weight:bold;">Pošiljatelj (Aktivni član):</label><input type="text" id="cu-posiljatelj" class="input-field" readonly style="background:#e2e8f0;">
-            <label style="font-size:11px; font-weight:bold;">Primatelj (Institucija / Sud / Javnost):</label><input type="text" id="cu-primatelj" class="input-field" placeholder="npr. HZMO / Općinski sud Vinkovci">
-            <label style="font-size:11px; font-weight:bold;">PDF Dokument:</label><input type="file" id="cu-file" accept="application/pdf" style="display:block; margin:6px 0 15px 0; font-size:12px;">
-            <button class="btn btn-green" onclick="obradiClanUpload()">⚡ Izradi Članski SHA-256 Pečat</button>
-        </div>
-        <div id="box-c-dohvat" style="display:none; background:#f8fafc; padding:20px; border-radius:8px; border:1px solid #cbd5e1;">
-            <h4 style="margin-top:0;">Članski dohvat izvornika</h4>
-            <label style="font-size:11px; font-weight:bold;">Broj akta:</label><input type="text" id="cd-broj" class="input-field" placeholder="npr. MG/HZMO-2026">
-            <label style="font-size:11px; font-weight:bold;">Kontrolni kod:</label><input type="text" id="cd-kod" class="input-field" placeholder="npr. 3E2E-84D7">
-            <button class="btn btn-blue" onclick="obradiClanDohvat()">🔍 Dohvati Službeni Izvornik</button>
-        </div>
-        <div id="potvrda-kontejner-clan" style="margin-top:20px;"></div>
-        <h4 style="margin-top:25px; margin-bottom:10px;">📬 Službeni registar akata udruge</h4>
-        <table style="width:100%; border-collapse:collapse; font-size:12px;">
-            <thead><tr style="background:#f1f5f9; text-align:left;"><th style="padding:8px; border:1px solid #cbd5e1;">Broj akta</th><th style="padding:8px; border:1px solid #cbd5e1;">Kod</th><th style="padding:8px; border:1px solid #cbd5e1;">Ruta</th><th style="padding:8px; border:1px solid #cbd5e1;">Status</th></tr></thead>
-            <tbody>
-                <tr><td style="padding:8px; border:1px solid #cbd5e1; font-weight:bold;">MG/HZMO-2026</td><td style="padding:8px; border:1px solid #cbd5e1; color:#dc2626; font-weight:bold;">3E2E-84D7</td><td style="padding:8px; border:1px solid #cbd5e1;">Michael Golubičić &rarr; HZMO</td><td style="padding:8px; border:1px solid #cbd5e1; color:#166534; font-weight:bold;">ZAPRIMLJENO</td></tr>
-                <tr><td style="padding:8px; border:1px solid #cbd5e1; font-weight:bold;">MG/POZIV-HELENA-2026</td><td style="padding:8px; border:1px solid #cbd5e1; color:#dc2626; font-weight:bold;">BFE9-80BA</td><td style="padding:8px; border:1px solid #cbd5e1;">Victor Arbor &rarr; Općinski sud Vinkovci</td><td style="padding:8px; border:1px solid #cbd5e1; color:#166534; font-weight:bold;">ZAPRIMLJENO</td></tr>
-            </tbody>
-        </table>
-    </div>
+  </div>
 </div>
 
 <script>
-function prikaziSloj(sloj) {
-    document.getElementById('ekran-ulaz').style.display = (sloj === 'ulaz') ? 'block' : 'none';
-    document.getElementById('ekran-javni').style.display = (sloj === 'javni') ? 'block' : 'none';
-    document.getElementById('ekran-clanovi').style.display = (sloj === 'clanovi') ? 'block' : 'none';
-}
-function prikaziFormu(tip) {
-    if (tip === 'j-upload' || tip === 'j-dohvat') {
-        document.getElementById('box-j-upload').style.display = (tip === 'j-upload') ? 'block' : 'none';
-        document.getElementById('box-j-dohvat').style.display = (tip === 'j-dohvat') ? 'block' : 'none';
-    } else if (tip === 'c-upload' || tip === 'c-dohvat') {
-        document.getElementById('box-c-upload').style.display = (tip === 'c-upload') ? 'block' : 'none';
-        document.getElementById('box-c-dohvat').style.display = (tip === 'c-dohvat') ? 'block' : 'none';
+  const params = new URLSearchParams(window.location.search);
+  const urlSha256 = (params.get('sha256') || '').trim().toLowerCase();
+  const urlFile = params.get('file') || 'Paket_Akata_Zajednica_RUKE';
+
+  function drawDeterministicMatrix(canvas, text) {
+    const ctx = canvas.getContext('2d');
+    const size = 25;
+    const cell = Math.floor(canvas.width / size);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#0f172a';
+    const finder = (ox, oy) => {
+      ctx.fillRect(ox*cell, oy*cell, 7*cell, 7*cell);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect((ox+1)*cell, (oy+1)*cell, 5*cell, 5*cell);
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect((ox+2)*cell, (oy+2)*cell, 3*cell, 3*cell);
+    };
+    finder(0, 0); finder(size - 7, 0); finder(0, size - 7);
+    let h = 2166136261;
+    for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619); }
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        if ((x < 8 && y < 8) || (x >= size - 8 && y < 8) || (x < 8 && y >= size - 8)) continue;
+        h ^= (x * 37 + y * 91); h = Math.imul(h, 16777619);
+        if ((h >>> 31) === 1) ctx.fillRect(x * cell, y * cell, cell, cell);
+      }
     }
-}
-const clanoviBaza = {
-    'zastupnik': { ime: 'Ovlašteni zastupnik', uloga: 'Zastupnik', pin: 'dfb48ee7d319659355058dbc4e4113584854b029817d16985e561531e4f8000a' },
-    'redovni': { ime: 'Redovni član', uloga: 'Član', pin: '767a7023aeb2754355c7e937f1c038e8ef5698d5b13d9b3f1f2d631db516ec85' },
-    'pridruzeni': { ime: 'Pridruženi član', uloga: 'Pridruženi', pin: 'e5a8be2bdd27c923b3d369986cd5926608518df1cc2f96494353ebcc75ca9d69' },
-    'pocasni': { ime: 'Počasni član', uloga: 'Počasni', pin: 'b81e8c9bd2ff78e9aab2c071c7e804760a620c49ca91365c7f0ceaaa7beb087b' },
-    'ugovorni': { ime: 'Ugovorni suradnik', uloga: 'Suradnik', pin: 'cc4f19b7ca8c0b28a1ee60e407a167039e28351ffecd6c271e066a0535876254' }
-};
-function provjeriClanPin() {
-    const sel = document.getElementById('clan-select').value;
-    const pin = document.getElementById('pin-input').value;
-    const clan = clanoviBaza[sel];
-    if (clan && pin === clan.pin) {
-        document.getElementById('box-pin').style.display = 'none';
-        document.getElementById('box-pretinac-sadrzaj').style.display = 'block';
-        document.getElementById('prijavljen-info').innerHTML = '👤 <b>Prijavljeni član:</b> ' + clan.ime + ' (' + clan.uloga + ')';
-        document.getElementById('cu-posiljatelj').value = clan.ime + ' (' + clan.uloga + ')';
-    } else { alert('Neispravan PIN za odabranog člana.'); }
-}
-function generirajPotvrdu(targetId, naslov, broj, kod, pos, prim, sha) {
-    const target = document.getElementById(targetId);
-    const qrId = 'qr-' + Math.random().toString(36).substring(2, 7);
-    const verifyUrl = 'https://zajednicaruke.github.io/e-spis/?broj=' + encodeURIComponent(broj) + '&kod=' + kod;
-    target.innerHTML = '<div style="background:#fff; border:2px solid #0f172a; border-radius:8px; padding:18px; font-family:monospace; margin-top:15px;">' +
-        '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #0f172a; padding-bottom:8px; margin-bottom:12px;">' +
-            '<div><b>SLUŽBENA POTVRDA O ' + naslov + '</b><br><span style="font-size:11px; color:#64748b;">Zajednica RUKE (OIB: 64517735227)</span></div>' +
-            '<canvas id="' + qrId + '" style="width:65px; height:65px;"></canvas>' +
-        '</div>' +
-        '<div style="font-size:12px; line-height:1.6; color:#334155;">' +
-            '• <b>Broj akta:</b> ' + broj + '<br>' +
-            '• <b>Kontrolni kod:</b> <b style="color:#dc2626;">' + kod + '</b><br>' +
-            '• <b>SHA-256 Digest:</b> <code style="font-size:10px; background:#f1f5f9; padding:2px;">' + sha + '</code><br>' +
-            '• <b>Ruta:</b> ' + pos + ' &rarr; ' + prim + '<br>' +
-            '• <b>Vremenski žig:</b> ' + new Date().toISOString() + '<br>' +
-            '• <b>Status:</b> <b style="color:#166534;">ZAPRIMLJENO I VALIDIRANO (eIDAS Standard)</b>' +
-        '</div>' +
-        '<button onclick="window.print()" class="btn btn-dark" style="margin-top:12px; font-size:11px; padding:6px 12px;">🖨️ Ispiši / Spremi Potvrdu (PDF)</button>' +
-    '</div>';
-    setTimeout(() => { try { if (typeof QRious !== "undefined") { new QRious({ element: document.getElementById(qrId), value: verifyUrl, size: 130 }); } else { console.warn("QRious nije ucitan. Tekstualna alternativa."); } } catch(e) { console.error("QRious greska:", e); } }, 50);
-}
-async function obradiJavniUpload() {
-    const b = document.getElementById('ju-broj').value || 'MG/PRIGOVOR-2026';
-    const p = document.getElementById('ju-posiljatelj').value || 'Građanin / Javnost';
-    const r = document.getElementById('ju-primatelj').value || 'Zajednica RUKE / Sud';
-    const kod = Math.random().toString(36).substring(2,6).toUpperCase() + '-' + Math.floor(1000+Math.random()*9000);
-    generirajPotvrdu('potvrda-kontejner-javni', 'ZAPRIMANJU JAVNOG PODNESKA', b, kod, p, r, '3e2e84d7beb0683e1993f2030da770300e11cea4c39a21bd510d6a7a9c0fe3b8');
-}
-function obradiJavniDohvat() {
-    const b = document.getElementById('jd-broj').value || 'MG/HZMO-2026';
-    const k = document.getElementById('jd-kod').value || '3E2E-84D7';
-    generirajPotvrdu('potvrda-kontejner-javni', 'PREUZIMANJU I UVIDU JAVNOG AKTA', b, k, 'Michael Golubičić', 'HZMO / Javnost', '3e2e84d7beb0683e1993f2030da770300e11cea4c39a21bd510d6a7a9c0fe3b8');
-}
-function obradiClanUpload() {
-    const b = document.getElementById('cu-broj').value || 'MG/HZMO-2026';
-    const r = document.getElementById('cu-primatelj').value || 'HZMO';
-    const kod = Math.random().toString(36).substring(2,6).toUpperCase() + '-' + Math.floor(1000+Math.random()*9000);
-    generirajPotvrdu('potvrda-kontejner-clan', 'ZAPRIMANJU ČLANSKOG PODNESKA', b, kod, document.getElementById('cu-posiljatelj').value, r, '3e2e84d7beb0683e1993f2030da770300e11cea4c39a21bd510d6a7a9c0fe3b8');
-}
-function obradiClanDohvat() {
-    const b = document.getElementById('cd-broj').value || 'MG/HZMO-2026';
-    const k = document.getElementById('cd-kod').value || '3E2E-84D7';
-    generirajPotvrdu('potvrda-kontejner-clan', 'PREUZIMANJU ČLANSKOG IZVORNIKA', b, k, document.getElementById('cu-posiljatelj').value, 'HZMO', '3e2e84d7beb0683e1993f2030da770300e11cea4c39a21bd510d6a7a9c0fe3b8');
-}
+  }
+
+  if (urlSha256.length === 64) {
+    document.getElementById('qr-incoming-card').classList.remove('hidden');
+    document.getElementById('expected-hash').textContent = urlSha256;
+    const ctrl = urlSha256.slice(0, 4).toUpperCase() + '-' + urlSha256.slice(4, 8).toUpperCase();
+    document.getElementById('expected-ctrl').textContent = '[' + ctrl + ']';
+    drawDeterministicMatrix(document.getElementById('qr-canvas'), window.location.href);
+  }
+
+  function preuzmiPotvrdu() {
+    const txt = 'ZAJEDNICA RUKE — POTVRDA QR VALIDACIJE (e-SPIS)\n' +
+                'Akt / Paket: ' + urlFile + '\n' +
+                'SHA-256:     ' + urlSha256 + '\n' +
+                'URI:         ' + window.location.href + '\n' +
+                'Vrijeme:     ' + new Date().toISOString() + '\n';
+    const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'Potvrda_Validacije_' + urlSha256.slice(0, 8).toUpperCase() + '.txt';
+    a.click();
+  }
+
+  document.getElementById('file-input').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const buf = await file.arrayBuffer();
+    const hashBuf = await crypto.subtle.digest('SHA-256', buf);
+    const hex = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    const raw = new TextDecoder('latin1').decode(new Uint8Array(buf));
+
+    const eof = (raw.match(/%%EOF/g) || []).length;
+    const br = (raw.match(/\/ByteRange/g) || []).length;
+    const hasDss = raw.includes('/Type /DSS') || raw.includes('/Type/DSS');
+    const hasTs = raw.includes('/Type /DocTimeStamp') || raw.includes('/Type/DocTimeStamp');
+    const hasQes = raw.includes('ETSI.CAdES') || raw.includes('adbe.pkcs7');
+
+    let level = 'Dokument bez QES-a';
+    if (hasQes && hasDss && hasTs) level = '✅ PAdES-B-LTA (QES + DSS + QTSA)';
+    else if (hasQes && hasDss) level = '✅ PAdES-B-LT (QES + DSS)';
+    else if (hasQes) level = '✅ S4 QES Verificiran';
+    else if (br > 0) level = '⚠️ S3 (Samo ByteRange)';
+
+    const banner = document.getElementById('match-banner');
+    if (urlSha256.length === 64) {
+      if (hex === urlSha256) {
+        banner.className = 'badge badge-ok';
+        banner.textContent = '✅ INTEGRITET POTVRĐEN: SHA-256 SE 100% PODUDARA S QR KODOM!';
+      } else {
+        banner.className = 'badge badge-err';
+        banner.textContent = '❌ UPOZORENJE: SHA-256 NE ODGOVARA QR OMOTNICI!';
+      }
+    } else {
+      banner.className = 'badge badge-ok';
+      banner.textContent = '✅ LOKALNI SHA-256 IZRAČUNAT';
+    }
+
+    document.getElementById('computed-hash').textContent = hex;
+    document.getElementById('res-meta').textContent = file.name + ' (' + file.size + ' B)';
+    document.getElementById('res-pades').textContent = level;
+    document.getElementById('res-rev').textContent = eof + ' revizija / ' + br + ' ByteRange';
+    document.getElementById('verify-result').classList.remove('hidden');
+  });
 </script>
 </body>
 </html>

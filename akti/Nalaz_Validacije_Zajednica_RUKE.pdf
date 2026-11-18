@@ -1,0 +1,46 @@
+%PDF-1.4
+1 0 obj
+<</Type/Catalog/Pages 2 0 R>>
+endobj
+2 0 obj
+<</Type/Pages/Count 1/Kids[3 0 R]>>
+endobj
+3 0 obj
+<</Type/Page/Parent 2 0 R/Resources<</Font<</F1 4 0 R>>>>/MediaBox[0 0 595 3000]/Contents 5 0 R>>
+endobj
+4 0 obj
+<</Type/Font/Subtype/Type1/BaseFont/Helvetica/Encoding/WinAnsiEncoding>>
+endobj
+5 0 obj
+<</Length 896>>
+stream
+BT
+/F1 8 Tf
+11 TL
+36 2920 Td
+(ZAJEDNICA RUKE - SUVERENI NALAZ VALIDACIJE [DSSvalidator2 LSBU]) Tj T*
+(------------------------------------------------------------------------) Tj T*
+(README_AArch64_Ekosustav.txt | UP/I-965-06/26-86/51 | 6451-26-06-33-2 | QES: NE) Tj T*
+(README_Modularni_PDF_Engine_Ekosustav.txt | UP/I-721-07/26-35/73 | 6451-26-03-52-1 | QES: NE) Tj T*
+(README_Modularni_PDF_Engine_Ekosustav.txt.sha256 | UP/I-316-03/26-04/11 | 6451-26-04-21-1 | QES: NE) Tj T*
+(MG_DIRH_PRIGOVOR_14_11_2026.pdf | UP/I-740-03/26-46/99 | 6451-26-07-84-2 | QES: NE) Tj T*
+(MANIFEST_SHA256_HEP.txt | UP/I-576-09/26-06/52 | 6451-26-02-72-9 | QES: NE) Tj T*
+(index.html | UP/I-422-03/26-06/33 | 6451-26-06-21-8 | QES: NE) Tj T*
+(------------------------------------------------------------------------) Tj T*
+(ZBIRNI SHA-256: 36d40275c245d2eb882dc64e63d036136d8f6b3f5493f651d85ddd42b85e0604) Tj T*
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000054 00000 n 
+0000000105 00000 n 
+0000000218 00000 n 
+0000000306 00000 n 
+trailer
+<</Size 6/Root 1 0 R>>
+startxref
+1250
+%%EOF

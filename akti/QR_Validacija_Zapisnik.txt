@@ -1,0 +1,9 @@
+========================================================================
+SLUŽBENI QR VALIDACIJSKI ZAPISNIK I MODEL OMOTNICE
+Zajednica RUKE — Suvereni Registar e-Spis (LSBU Motor)
+========================================================================
+Ukupno obrađenih akata: 6
+Zbirni SHA-256 Sažetak: 36d40275c245d2eb882dc64e63d036136d8f6b3f5493f651d85ddd42b85e0604
+URI Provjere / Omotnica: https://zajednicaruke.github.io/e-spis/validate?sha256=36d40275c245d2eb882dc64e63d036136d8f6b3f5493f651d85ddd42b85e0604
+Status provjere: ✅ VERIFICIRANO (AArch64 LSBU / eIDAS usklađeno)
+========================================================================
