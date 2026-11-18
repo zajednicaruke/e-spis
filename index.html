@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Zajednica RUKE — Suvereni Registar e-Spis (eIDAS / PAdES-LTA)</title>
+  <meta name="description" content="Suvereni registar e-Spis — PAdES-B-LTA validacija i QR forenzika Zajednice RUKE.">
+  <meta property="og:title" content="Zajednica RUKE — e-Spis">
+  <meta property="og:description" content="Deterministička LSBU / C23 & eIDAS PAdES-B-LTA Validacija akta.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
   <style>
     :root { --bg: #0b1120; --card: #111827; --border: #1f2937; --accent: #3b82f6; --ok: #10b981; --warn: #f59e0b; --err: #ef4444; --text: #f3f4f6; --muted: #9ca3af; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -19,7 +23,7 @@
     .badge-err { background: rgba(239,68,68,0.15); color: var(--err); border: 1px solid var(--err); }
     .hash-box { background: #030712; border: 1px solid #374151; border-radius: 8px; padding: 10px; font-family: monospace; font-size: 0.82rem; word-break: break-all; color: #38bdf8; margin: 8px 0; }
     .qr-grid { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; }
-    .qr-canvas-wrap { background: #fff; padding: 10px; border-radius: 8px; display: inline-block; }
+    .qr-canvas-wrap { background: #fff; padding: 10px; border-radius: 8px; display: inline-block; text-align: center; }
     .drop-zone { border: 2px dashed #374151; border-radius: 10px; padding: 24px; text-align: center; cursor: pointer; transition: 0.2s; }
     .drop-zone:hover { border-color: var(--accent); background: rgba(59,130,246,0.05); }
     .btn { background: var(--accent); color: #fff; border: none; padding: 10px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.85rem; margin-top: 10px; display: inline-block; text-decoration: none; }
@@ -33,6 +37,8 @@
     .file-list span { font-size: 0.85rem; font-family: monospace; color: #cbd5e1; }
     .hidden { display: none; }
   </style>
+  <!-- Ugrađena lagana QR biblioteka (Micro QR / Standard QR SVG generator) -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 </head>
 <body>
 <div class="container">
@@ -49,11 +55,11 @@
     <ul class="file-list">
       <li>
         <span>📄 Nalaz_Validacije_Zajednica_RUKE.pdf</span>
-        <a href="akti/Nalaz_Validacije_Zajednica_RUKE.pdf" class="btn" style="margin-top:0; padding:6px 12px;">Preuzmi PDF</a>
+        <a href="/e-spis/akti/Nalaz_Validacije_Zajednica_RUKE.pdf" class="btn" style="margin-top:0; padding:6px 12px;">Preuzmi PDF</a>
       </li>
       <li>
         <span>📋 QR_Validacija_Zapisnik.txt</span>
-        <a href="akti/QR_Validacija_Zapisnik.txt" class="btn" style="margin-top:0; padding:6px 12px;">Preuzmi Zapisnik</a>
+        <a href="/e-spis/akti/QR_Validacija_Zapisnik.txt" class="btn" style="margin-top:0; padding:6px 12px;">Preuzmi Zapisnik</a>
       </li>
     </ul>
   </div>
@@ -68,8 +74,8 @@
         <p style="font-size: 0.85rem;">Kontrolni kod akta: <strong id="expected-ctrl" style="color: #10b981;">-</strong></p>
         <button class="btn" onclick="preuzmiPotvrdu()">⬇️ Preuzmi QR Potvrdu (.txt)</button>
       </div>
-      <div class="qr-canvas-wrap">
-        <canvas id="qr-canvas" width="160" height="160"></canvas>
+      <div class="qr-canvas-wrap" id="qr-container">
+        <!-- Ovdje se iscrtava pravi strojno čitljivi QR kod -->
       </div>
     </div>
   </div>
@@ -102,29 +108,18 @@
   const urlSha256 = (params.get('sha256') || '').trim().toLowerCase();
   const urlFile = params.get('file') || 'Paket_Akata_Zajednica_RUKE';
 
-  function drawDeterministicMatrix(canvas, text) {
-    const ctx = canvas.getContext('2d');
-    const size = 25;
-    const cell = Math.floor(canvas.width / size);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#0f172a';
-    const finder = (ox, oy) => {
-      ctx.fillRect(ox*cell, oy*cell, 7*cell, 7*cell);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect((ox+1)*cell, (oy+1)*cell, 5*cell, 5*cell);
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect((ox+2)*cell, (oy+2)*cell, 3*cell, 3*cell);
-    };
-    finder(0, 0); finder(size - 7, 0); finder(0, size - 7);
-    let h = 2166136261;
-    for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619); }
-    for (let y = 0; y < size; y++) {
-      for (let x = 0; x < size; x++) {
-        if ((x < 8 && y < 8) || (x >= size - 8 && y < 8) || (x < 8 && y >= size - 8)) continue;
-        h ^= (x * 37 + y * 91); h = Math.imul(h, 16777619);
-        if ((h >>> 31) === 1) ctx.fillRect(x * cell, y * cell, cell, cell);
-      }
+  function renderRealQRCode(text) {
+    const container = document.getElementById('qr-container');
+    container.innerHTML = '';
+    try {
+      // Kreiramo pravi QR kod (tip 0 = automatski, error correction Level M)
+      const qr = qrcode(0, 'M');
+      qr.addData(text);
+      qr.make();
+      // Kreiramo SVG element s modulima
+      container.innerHTML = qr.createSvgTag({cellSize: 4, margin: 2});
+    } catch (err) {
+      container.innerHTML = '<span style="color:red; font-size:0.8rem;">Greška QR</span>';
     }
   }
 
@@ -133,7 +128,7 @@
     document.getElementById('expected-hash').textContent = urlSha256;
     const ctrl = urlSha256.slice(0, 4).toUpperCase() + '-' + urlSha256.slice(4, 8).toUpperCase();
     document.getElementById('expected-ctrl').textContent = '[' + ctrl + ']';
-    drawDeterministicMatrix(document.getElementById('qr-canvas'), window.location.href);
+    renderRealQRCode(window.location.href);
   }
 
   function preuzmiPotvrdu() {
