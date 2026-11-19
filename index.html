@@ -1,192 +1,300 @@
 <!DOCTYPE html>
 <html lang="hr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Zajednica RUKE — Suvereni Registar e-Spis (eIDAS / PAdES-LTA)</title>
-  <meta name="description" content="Suvereni registar e-Spis — PAdES-B-LTA validacija i QR forenzika Zajednice RUKE.">
-  <meta property="og:title" content="Zajednica RUKE — e-Spis">
-  <meta property="og:description" content="Deterministička LSBU / C23 & eIDAS PAdES-B-LTA Validacija akta.">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
-  <style>
-    :root { --bg: #0b1120; --card: #111827; --border: #1f2937; --accent: #3b82f6; --ok: #10b981; --warn: #f59e0b; --err: #ef4444; --text: #f3f4f6; --muted: #9ca3af; }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace; background: var(--bg); color: var(--text); line-height: 1.5; padding: 16px; }
-    .container { max-width: 860px; margin: 0 auto; }
-    header { background: linear-gradient(135deg, #0f172a, #1e3a8a); border: 1px solid #2563eb; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
-    header h1 { font-size: 1.35rem; color: #fff; margin-bottom: 4px; }
-    header p { font-size: 0.85rem; color: #93c5fd; }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 16px; }
-    .card h2 { font-size: 1.05rem; color: #60a5fa; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
-    .badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; }
-    .badge-ok { background: rgba(16,185,129,0.15); color: var(--ok); border: 1px solid var(--ok); }
-    .badge-err { background: rgba(239,68,68,0.15); color: var(--err); border: 1px solid var(--err); }
-    .hash-box { background: #030712; border: 1px solid #374151; border-radius: 8px; padding: 10px; font-family: monospace; font-size: 0.82rem; word-break: break-all; color: #38bdf8; margin: 8px 0; }
-    .qr-grid { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; }
-    .qr-canvas-wrap { background: #fff; padding: 10px; border-radius: 8px; display: inline-block; text-align: center; }
-    .drop-zone { border: 2px dashed #374151; border-radius: 10px; padding: 24px; text-align: center; cursor: pointer; transition: 0.2s; }
-    .drop-zone:hover { border-color: var(--accent); background: rgba(59,130,246,0.05); }
-    .btn { background: var(--accent); color: #fff; border: none; padding: 10px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.85rem; margin-top: 10px; display: inline-block; text-decoration: none; }
-    .btn:hover { background: #2563eb; }
-    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 12px; }
-    .stat { background: #030712; padding: 12px; border-radius: 8px; border: 1px solid #1f2937; }
-    .stat span { display: block; font-size: 0.75rem; color: var(--muted); }
-    .stat strong { font-size: 0.9rem; color: #fff; }
-    .file-list { list-style: none; margin-top: 10px; }
-    .file-list li { display: flex; justify-content: space-between; align-items: center; background: #030712; border: 1px solid #1f2937; padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; }
-    .file-list span { font-size: 0.85rem; font-family: monospace; color: #cbd5e1; }
-    .hidden { display: none; }
-  </style>
-  <!-- Ugrađena lagana QR biblioteka (Micro QR / Standard QR SVG generator) -->
-  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zajednica RUKE — Suvereni Registar e-Spis</title>
+<meta property="og:title" content="Zajednica RUKE — Suvereni Registar e-Spis">
+<meta property="og:description" content="OIB: 64517735227 | Deterministicka LSBU / C23 i eIDAS PAdES-B-LTA verifikacija">
+<meta property="og:type" content="website">
+<style>
+:root {
+  --bg: #080d17;
+  --panel: #10192b;
+  --panel-2: #162238;
+  --line: #263654;
+  --text: #eef2f7;
+  --muted: #9fb0c9;
+  --yellow: #facc15;
+  --yellow-dark: #ca8a04;
+  --blue: #3b82f6;
+  --blue-dark: #1d4ed8;
+  --red: #ef4444;
+  --red-dark: #b91c1c;
+  --green: #22c55e;
+  --green-dark: #15803d;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: radial-gradient(circle at top, #132038 0%, var(--bg) 62%);
+  color: var(--text);
+  line-height: 1.55;
+  padding: 20px 14px 48px;
+}
+.wrap { max-width: 980px; margin: 0 auto; }
+.hero {
+  background: linear-gradient(145deg, var(--panel), var(--panel-2));
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 22px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.45);
+}
+.hero h1 { margin: 0 0 6px; font-size: 1.45rem; letter-spacing: 0.01em; }
+.hero .sub { color: var(--muted); font-size: 0.92rem; }
+.mode-switch {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+.btn-switch {
+  cursor: pointer;
+  border: none;
+  border-radius: 14px;
+  padding: 15px 18px;
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+}
+.btn-switch:active { transform: translateY(2px); }
+.btn-public {
+  background: var(--yellow);
+  color: #111827;
+  box-shadow: 0 5px 0 var(--yellow-dark);
+}
+.btn-member {
+  background: var(--blue);
+  color: #ffffff;
+  box-shadow: 0 5px 0 var(--blue-dark);
+}
+.btn-switch.inactive { filter: brightness(0.72); opacity: 0.85; }
+.card {
+  margin-top: 18px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 20px;
+}
+.card h2 { margin: 0 0 8px; font-size: 1.15rem; }
+.muted { color: var(--muted); font-size: 0.9rem; }
+.act-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.act-item {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+}
+.btn-action {
+  cursor: pointer;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-decoration: none;
+  text-align: center;
+  display: inline-block;
+  transition: transform 0.1s ease;
+}
+.btn-action:active { transform: translateY(2px); }
+.btn-green { background: var(--green); color: #052e16; box-shadow: 0 3px 0 var(--green-dark); }
+.btn-red { background: var(--red); color: #ffffff; box-shadow: 0 3px 0 var(--red-dark); }
+.pin-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.pin-input {
+  flex: 1 1 210px;
+  background: #09101d;
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+}
+.dropzone {
+  margin-top: 12px;
+  border: 2px dashed #3b527a;
+  border-radius: 14px;
+  padding: 22px;
+  text-align: center;
+  background: rgba(15, 25, 43, 0.65);
+  cursor: pointer;
+}
+.hash-box {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #080d17;
+  border: 1px solid var(--line);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+  word-break: break-all;
+}
+.hidden { display: none; }
+.member-head { display: flex; align-items: center; gap: 14px; }
+</style>
 </head>
 <body>
-<div class="container">
-  <header>
-    <h1>🛡️ Zajednica RUKE — Suvereni Registar e-Spis</h1>
-    <p>OIB: 64517735227 | Deterministička LSBU / C23 &amp; eIDAS PAdES-B-LTA Validacija</p>
+<div class="wrap">
+  <header class="hero">
+<svg class="emblem-svg" viewBox="0 0 96 96" width="72" height="72" role="img" aria-label="Grb Zajednice RUKE">
+  <circle cx="48" cy="48" r="43" fill="#0d1524" stroke="#facc15" stroke-width="3.5"/>
+  <circle cx="48" cy="48" r="36" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="1.2" stroke-dasharray="4 4"/>
+  <polygon points="48,18 70,48 48,44 26,48" fill="#facc15" opacity="0.92"/>
+  <polygon points="48,78 70,48 48,52 26,48" fill="#e2e8f0" opacity="0.85"/>
+  <circle cx="48" cy="48" r="5" fill="#0b111e" stroke="#facc15" stroke-width="2"/>
+</svg>
+    <div>
+      <h1>Zajednica RUKE — Suvereni Registar e-Spis</h1>
+      <div class="sub">OIB: 64517735227 | Deterministicka LSBU / C23 i eIDAS PAdES-B-LTA Validacija</div>
+    </div>
   </header>
 
-  <div class="card">
-    <h2>📁 Službeni Akti i Nalazi Validacije za Preuzimanje</h2>
-    <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 12px;">
-      Preuzmite službene PDF nalaze, zapisnike i QR omotnice generirane od strane asemblerskog motora DSSvalidator2.
-    </p>
-    <ul class="file-list">
-      <li>
-        <span>📄 Nalaz_Validacije_Zajednica_RUKE.pdf</span>
-        <a href="/e-spis/akti/Nalaz_Validacije_Zajednica_RUKE.pdf" class="btn" style="margin-top:0; padding:6px 12px;">Preuzmi PDF</a>
-      </li>
-      <li>
-        <span>📋 QR_Validacija_Zapisnik.txt</span>
-        <a href="/e-spis/akti/QR_Validacija_Zapisnik.txt" class="btn" style="margin-top:0; padding:6px 12px;">Preuzmi Zapisnik</a>
-      </li>
-    </ul>
+  <div class="mode-switch" role="tablist" aria-label="Odabir pretinca">
+    <button id="tab-public" class="btn-switch btn-public" type="button" onclick="prebaciPretinac('public')">
+      <span>Javni pretinac</span>
+      <span>[AKTIVNO]</span>
+    </button>
+    <button id="tab-member" class="btn-switch btn-member inactive" type="button" onclick="prebaciPretinac('member')">
+      <span>Privatni pretinac za clanove</span>
+      <span>[PIN]</span>
+    </button>
   </div>
 
-  <div id="qr-incoming-card" class="card hidden">
-    <h2>📲 Očitani QR Validacijski Zahtjev (Model Omotnice)</h2>
-    <div class="qr-grid">
-      <div style="flex: 1; min-width: 240px;">
-        <div id="qr-status-badge" class="badge badge-ok">✅ URI PARAMETAR ZAPREMLJEN</div>
-        <p style="font-size: 0.85rem; color: var(--muted); margin-top: 8px;">Očekivani SHA-256 sažetak iz QR koda:</p>
-        <div id="expected-hash" class="hash-box">-</div>
-        <p style="font-size: 0.85rem;">Kontrolni kod akta: <strong id="expected-ctrl" style="color: #10b981;">-</strong></p>
-        <button class="btn" onclick="preuzmiPotvrdu()">⬇️ Preuzmi QR Potvrdu (.txt)</button>
+  <section id="panel-public" class="card">
+    <h2>Javni pretinac — Sluzbeni Akti i Nalazi Validacije</h2>
+    <p class="muted">Izravno preuzimanje PDF nalaza, zapisnika i QR omotnica generiranih AArch64 motorom DSSvalidator2.</p>
+    <div class="act-grid">
+      <div class="act-item">
+        <div><strong>Nalaz_Validacije_Zajednica_RUKE.pdf</strong><div class="muted">Sluzbeni forenzicki nalaz validacije</div></div>
+        <a class="btn-action btn-green" href="./Nalaz_Validacije_Zajednica_RUKE.pdf" download>Preuzmi PDF</a>
       </div>
-      <div class="qr-canvas-wrap" id="qr-container">
-        <!-- Ovdje se iscrtava pravi strojno čitljivi QR kod -->
+      <div class="act-item">
+        <div><strong>QR_Validacija_Zapisnik.txt</strong><div class="muted">Zbirni SHA-256 i URI omotnica registra</div></div>
+        <a class="btn-action btn-green" href="./QR_Validacija_Zapisnik.txt" download>Preuzmi Zapisnik</a>
+      </div>
+      <div class="act-item">
+        <div><strong>MG_DIRH_PRIGOVOR_14_11_2026.pdf</strong><div class="muted">Sluzbeni podnesak i ByteRange zapis</div></div>
+        <a class="btn-action btn-red" href="./MG_DIRH_PRIGOVOR_14_11_2026.pdf" download>Otvori Akt</a>
       </div>
     </div>
-  </div>
+  </section>
 
-  <div class="card">
-    <h2>🔍 Lokalna Forenzička Verifikacija Dokumenta (Zero-Server Exfiltration)</h2>
-    <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 12px;">
-      Učitajte izvorni PDF ili tekstualni akt izravno u memoriju preglednika radi lokalne FIPS 180-4 SHA-256 verifikacije.
-    </p>
-    <div class="drop-zone" onclick="document.getElementById('file-input').click()">
-      <input type="file" id="file-input" class="hidden">
-      <p style="font-weight: bold;">Kliknite ili ispustite dokument za trenutačnu provjeru</p>
-      <p style="font-size: 0.78rem; color: var(--muted); margin-top: 4px;">100% lokalna obrada putem WebCrypto API-ja</p>
-    </div>
-
-    <div id="verify-result" class="hidden" style="margin-top: 16px;">
-      <div id="match-banner" class="badge badge-ok" style="margin-bottom: 10px;">-</div>
-      <div class="hash-box" id="computed-hash">-</div>
-      <div class="grid-3">
-        <div class="stat"><span>Naziv / Veličina</span><strong id="res-meta">-</strong></div>
-        <div class="stat"><span>PAdES / eIDAS Razina</span><strong id="res-pades">-</strong></div>
-        <div class="stat"><span>Revizije (%EOF) / ByteRange</span><strong id="res-rev">-</strong></div>
+  <section id="panel-member" class="card hidden">
+    <div class="member-head">
+<svg class="emblem-svg" viewBox="0 0 96 96" width="72" height="72" role="img" aria-label="Amblem clanova Zajednice RUKE">
+  <circle cx="48" cy="48" r="43" fill="#0d1524" stroke="#3b82f6" stroke-width="3.5"/>
+  <circle cx="48" cy="48" r="36" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="1.2" stroke-dasharray="4 4"/>
+  <polygon points="48,18 70,48 48,44 26,48" fill="#3b82f6" opacity="0.92"/>
+  <polygon points="48,78 70,48 48,52 26,48" fill="#e2e8f0" opacity="0.85"/>
+  <circle cx="48" cy="48" r="5" fill="#0b111e" stroke="#3b82f6" stroke-width="2"/>
+</svg>
+      <div>
+        <h2>Privatni pretinac za clanove</h2>
+        <p class="muted">Lokalna autorizacija clanova i uvid u radne akte bez slanja podataka na udaljeni poslužitelj.</p>
       </div>
     </div>
-  </div>
+    <div id="member-lock" class="pin-row">
+      <input id="member-pin" class="pin-input" type="password" placeholder="Unesite clanski PIN..." aria-label="Clanski PIN">
+      <button class="btn-action btn-green" type="button" onclick="otkljucajPretinac()">Otkljucaj pretinac</button>
+      <button class="btn-action btn-red" type="button" onclick="ocistiPin()">Ocisti</button>
+    </div>
+    <div id="member-status" class="muted" style="margin-top:8px;">Status: Zakljucano.</div>
+    <div id="member-vault" class="hidden" style="margin-top:14px;">
+      <div class="act-grid">
+        <div class="act-item">
+          <div><strong>MANIFEST_SHA256_HEP.txt</strong><div class="muted">Kontrolni popis sažetaka i akata</div></div>
+          <a class="btn-action btn-green" href="./MANIFEST_SHA256_HEP.txt" download>Preuzmi Manifest</a>
+        </div>
+        <div class="act-item">
+          <div><strong>README_Suvereni_AArch64_Ekosustav.txt</strong><div class="muted">Arhitektura i BST specifikacija</div></div>
+          <a class="btn-action btn-green" href="./README_Suvereni_AArch64_Ekosustav.txt" download>Preuzmi Specifikaciju</a>
+        </div>
+      </div>
+      <div style="margin-top:12px;">
+        <button class="btn-action btn-red" type="button" onclick="zakljucajPretinac()">Zakljucaj pretinac</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Lokalna Forenzicka Verifikacija Dokumenta (Zero-Server Exfiltration)</h2>
+    <p class="muted">Ucitajte izvorni PDF ili tekstualni akt izravno u memoriju preglednika radi lokalne FIPS 180-4 SHA-256 verifikacije.</p>
+    <div id="dropzone" class="dropzone" onclick="document.getElementById('file-input').click()">
+      <div><strong>Kliknite ili ispustite dokument za trenutacnu provjeru</strong></div>
+      <div class="muted">100% lokalna obrada putem WebCrypto API-ja</div>
+      <input id="file-input" type="file" class="hidden" onchange="provjeriDatoteku(this.files[0])">
+    </div>
+    <div id="hash-output" class="hash-box">Ceka se odabir dokumenta...</div>
+  </section>
 </div>
 
 <script>
-  const params = new URLSearchParams(window.location.search);
-  const urlSha256 = (params.get('sha256') || '').trim().toLowerCase();
-  const urlFile = params.get('file') || 'Paket_Akata_Zajednica_RUKE';
-
-  function renderRealQRCode(text) {
-    const container = document.getElementById('qr-container');
-    container.innerHTML = '';
-    try {
-      // Kreiramo pravi QR kod (tip 0 = automatski, error correction Level M)
-      const qr = qrcode(0, 'M');
-      qr.addData(text);
-      qr.make();
-      // Kreiramo SVG element s modulima
-      container.innerHTML = qr.createSvgTag({cellSize: 4, margin: 2});
-    } catch (err) {
-      container.innerHTML = '<span style="color:red; font-size:0.8rem;">Greška QR</span>';
-    }
+function prebaciPretinac(mode) {
+  const pubCard = document.getElementById('panel-public');
+  const memCard = document.getElementById('panel-member');
+  const pubBtn = document.getElementById('tab-public');
+  const memBtn = document.getElementById('tab-member');
+  if (mode === 'public') {
+    pubCard.classList.remove('hidden');
+    memCard.classList.add('hidden');
+    pubBtn.classList.remove('inactive');
+    memBtn.classList.add('inactive');
+  } else {
+    memCard.classList.remove('hidden');
+    pubCard.classList.add('hidden');
+    memBtn.classList.remove('inactive');
+    pubBtn.classList.add('inactive');
   }
-
-  if (urlSha256.length === 64) {
-    document.getElementById('qr-incoming-card').classList.remove('hidden');
-    document.getElementById('expected-hash').textContent = urlSha256;
-    const ctrl = urlSha256.slice(0, 4).toUpperCase() + '-' + urlSha256.slice(4, 8).toUpperCase();
-    document.getElementById('expected-ctrl').textContent = '[' + ctrl + ']';
-    renderRealQRCode(window.location.href);
+}
+function otkljucajPretinac() {
+  const pin = document.getElementById('member-pin').value.trim();
+  const validPins = ['3PutSvet!', 'Clan2026!', 'Pridruzeni2026!', 'Pocasni2026!', 'Ugovor2026!'];
+  const st = document.getElementById('member-status');
+  if (validPins.includes(pin)) {
+    st.textContent = 'Status: Otkljucano (lokalna sesija clana).';
+    document.getElementById('member-vault').classList.remove('hidden');
+    document.getElementById('member-pin').value = '';
+  } else {
+    st.textContent = 'Status: Neispravan PIN.';
   }
-
-  function preuzmiPotvrdu() {
-    const txt = 'ZAJEDNICA RUKE — POTVRDA QR VALIDACIJE (e-SPIS)\n' +
-                'Akt / Paket: ' + urlFile + '\n' +
-                'SHA-256:     ' + urlSha256 + '\n' +
-                'URI:         ' + window.location.href + '\n' +
-                'Vrijeme:     ' + new Date().toISOString() + '\n';
-    const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'Potvrda_Validacije_' + urlSha256.slice(0, 8).toUpperCase() + '.txt';
-    a.click();
-  }
-
-  document.getElementById('file-input').addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const buf = await file.arrayBuffer();
-    const hashBuf = await crypto.subtle.digest('SHA-256', buf);
-    const hex = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
-    const raw = new TextDecoder('latin1').decode(new Uint8Array(buf));
-
-    const eof = (raw.match(/%%EOF/g) || []).length;
-    const br = (raw.match(/\/ByteRange/g) || []).length;
-    const hasDss = raw.includes('/Type /DSS') || raw.includes('/Type/DSS');
-    const hasTs = raw.includes('/Type /DocTimeStamp') || raw.includes('/Type/DocTimeStamp');
-    const hasQes = raw.includes('ETSI.CAdES') || raw.includes('adbe.pkcs7');
-
-    let level = 'Nije QES potpisani PDF';
-    if (raw.startsWith('%PDF-')) {
-      if (hasQes && hasDss && hasTs) level = '✅ PAdES-B-LTA (QES + DSS + QTSA)';
-      else if (hasQes && hasDss) level = '✅ PAdES-B-LT (QES + DSS)';
-      else if (hasQes) level = '✅ S4 QES Verificiran';
-      else if (br > 0) level = '⚠️ S3 (Samo ByteRange)';
-      else level = '📄 PDF (Nema digitalnog potpisa)';
-    }
-
-    const banner = document.getElementById('match-banner');
-    if (urlSha256.length === 64) {
-      if (hex === urlSha256) {
-        banner.className = 'badge badge-ok';
-        banner.textContent = '✅ INTEGRITET POTVRĐEN: SHA-256 SE 100% PODUDARA S QR KODOM!';
-      } else {
-        banner.className = 'badge badge-err';
-        banner.textContent = '❌ UPOZORENJE: SHA-256 NE ODGOVARA QR OMOTNICI!';
-      }
-    } else {
-      banner.className = 'badge badge-ok';
-      banner.textContent = '✅ LOKALNI SHA-256 IZRAČUNAT';
-    }
-
-    document.getElementById('computed-hash').textContent = hex;
-    document.getElementById('res-meta').textContent = file.name + ' (' + file.size + ' B)';
-    document.getElementById('res-pades').textContent = level;
-    document.getElementById('res-rev').textContent = eof + ' revizija / ' + br + ' ByteRange';
-    document.getElementById('verify-result').classList.remove('hidden');
-  });
+}
+function ocistiPin() {
+  document.getElementById('member-pin').value = '';
+  document.getElementById('member-status').textContent = 'Status: Unos ociscen.';
+}
+function zakljucajPretinac() {
+  document.getElementById('member-vault').classList.add('hidden');
+  document.getElementById('member-status').textContent = 'Status: Zakljucano.';
+}
+async function provjeriDatoteku(file) {
+  if (!file) return;
+  const box = document.getElementById('hash-output');
+  const buf = await file.arrayBuffer();
+  const digest = await crypto.subtle.digest('SHA-256', buf);
+  const hex = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+  const kod = hex.slice(0, 4).toUpperCase() + '-' + hex.slice(4, 8).toUpperCase();
+  box.textContent = 'Datoteka: ' + file.name + ' (' + file.size + ' B) | Kontrolni kod: [' + kod + '] | SHA-256: ' + hex;
+}
+const dz = document.getElementById('dropzone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.borderColor = '#facc15'; });
+dz.addEventListener('dragleave', () => { dz.style.borderColor = '#3b527a'; });
+dz.addEventListener('drop', e => { e.preventDefault(); dz.style.borderColor = '#3b527a'; if (e.dataTransfer.files.length) provjeriDatoteku(e.dataTransfer.files[0]); });
 </script>
 </body>
 </html>
