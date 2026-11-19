@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Zajednica RUKE — Suvereni Registar e-Spis</title>
 <meta property="og:title" content="Zajednica RUKE — Suvereni Registar e-Spis">
-<meta property="og:description" content="OIB: 64517735227 | Deterministicka LSBU / C23 i eIDAS PAdES-B-LTA verifikacija">
+<meta property="og:description" content="OIB: 64517735227 | Deterministicka LSBU / C23 i eIDAS PAdES-B-LTA Validacija">
 <meta property="og:type" content="website">
 <style>
 :root {
@@ -34,20 +34,45 @@ body {
   padding: 20px 14px 48px;
 }
 .wrap { max-width: 980px; margin: 0 auto; }
-.hero {
+.hero, .sub-hero {
   background: linear-gradient(145deg, var(--panel), var(--panel-2));
   border: 1px solid var(--line);
   border-radius: 18px;
-  padding: 22px;
-  display: flex;
-  align-items: center;
-  gap: 18px;
+  padding: 22px 20px;
+  text-align: center;
   box-shadow: 0 18px 40px rgba(0,0,0,0.45);
 }
-.hero h1 { margin: 0 0 6px; font-size: 1.45rem; letter-spacing: 0.01em; }
-.hero .sub { color: var(--muted); font-size: 0.92rem; }
+.sub-hero { padding: 18px 16px; margin-bottom: 14px; }
+.center-logo-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.center-logo-img {
+  width: 92px;
+  height: 92px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid var(--yellow);
+  background: #0b1322;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.45);
+}
+.center-logo-fallback {
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  border: 3px solid var(--yellow);
+  background: #0b1322;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+}
+.hero h1 { margin: 0 0 6px; font-size: 1.42rem; }
+.sub-hero h2 { margin: 0 0 4px; font-size: 1.2rem; }
+.sub { color: var(--muted); font-size: 0.9rem; }
 .mode-switch {
-  margin-top: 18px;
+  margin-top: 16px;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 14px;
@@ -56,26 +81,19 @@ body {
   cursor: pointer;
   border: none;
   border-radius: 14px;
-  padding: 15px 18px;
-  font-size: 1rem;
+  padding: 14px 16px;
+  font-size: 0.98rem;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+  gap: 10px;
+  transition: transform 0.12s ease, filter 0.12s ease;
 }
 .btn-switch:active { transform: translateY(2px); }
-.btn-public {
-  background: var(--yellow);
-  color: #111827;
-  box-shadow: 0 5px 0 var(--yellow-dark);
-}
-.btn-member {
-  background: var(--blue);
-  color: #ffffff;
-  box-shadow: 0 5px 0 var(--blue-dark);
-}
-.btn-switch.inactive { filter: brightness(0.72); opacity: 0.85; }
+.btn-public { background: var(--yellow); color: #111827; box-shadow: 0 5px 0 var(--yellow-dark); }
+.btn-member { background: var(--blue); color: #ffffff; box-shadow: 0 5px 0 var(--blue-dark); }
+.btn-switch.inactive { filter: brightness(0.74); opacity: 0.88; }
 .card {
   margin-top: 18px;
   background: var(--panel);
@@ -83,7 +101,6 @@ body {
   border-radius: 16px;
   padding: 20px;
 }
-.card h2 { margin: 0 0 8px; font-size: 1.15rem; }
 .muted { color: var(--muted); font-size: 0.9rem; }
 .act-grid {
   display: grid;
@@ -111,9 +128,7 @@ body {
   text-decoration: none;
   text-align: center;
   display: inline-block;
-  transition: transform 0.1s ease;
 }
-.btn-action:active { transform: translateY(2px); }
 .btn-green { background: var(--green); color: #052e16; box-shadow: 0 3px 0 var(--green-dark); }
 .btn-red { background: var(--red); color: #ffffff; box-shadow: 0 3px 0 var(--red-dark); }
 .pin-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
@@ -146,39 +161,39 @@ body {
   word-break: break-all;
 }
 .hidden { display: none; }
-.member-head { display: flex; align-items: center; gap: 14px; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header class="hero">
-<svg class="emblem-svg" viewBox="0 0 96 96" width="72" height="72" role="img" aria-label="Grb Zajednice RUKE">
-  <circle cx="48" cy="48" r="43" fill="#0d1524" stroke="#facc15" stroke-width="3.5"/>
-  <circle cx="48" cy="48" r="36" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="1.2" stroke-dasharray="4 4"/>
-  <polygon points="48,18 70,48 48,44 26,48" fill="#facc15" opacity="0.92"/>
-  <polygon points="48,78 70,48 48,52 26,48" fill="#e2e8f0" opacity="0.85"/>
-  <circle cx="48" cy="48" r="5" fill="#0b111e" stroke="#facc15" stroke-width="2"/>
-</svg>
-    <div>
-      <h1>Zajednica RUKE — Suvereni Registar e-Spis</h1>
-      <div class="sub">OIB: 64517735227 | Deterministicka LSBU / C23 i eIDAS PAdES-B-LTA Validacija</div>
-    </div>
+<div class="center-logo-wrap">
+  <img class="center-logo-img" src="./EU_RUKE_1793640051705.webp" alt="Glavno sucelje izbornika EU RUKE" style="border-color:#facc15;" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';">
+  <span class="center-logo-fallback" style="display:none;border-color:#facc15;">RUKE</span>
+</div>
+    <h1>Zajednica RUKE — Suvereni Registar e-Spis</h1>
+    <div class="sub">OIB: 64517735227 | Deterministicka LSBU / C23 i eIDAS PAdES-B-LTA Validacija</div>
   </header>
 
   <div class="mode-switch" role="tablist" aria-label="Odabir pretinca">
     <button id="tab-public" class="btn-switch btn-public" type="button" onclick="prebaciPretinac('public')">
-      <span>Javni pretinac</span>
+      <span>Javni ulaz (Pretinac)</span>
       <span>[AKTIVNO]</span>
     </button>
     <button id="tab-member" class="btn-switch btn-member inactive" type="button" onclick="prebaciPretinac('member')">
-      <span>Privatni pretinac za clanove</span>
+      <span>Privatni pretinac clanova</span>
       <span>[PIN]</span>
     </button>
   </div>
 
   <section id="panel-public" class="card">
-    <h2>Javni pretinac — Sluzbeni Akti i Nalazi Validacije</h2>
-    <p class="muted">Izravno preuzimanje PDF nalaza, zapisnika i QR omotnica generiranih AArch64 motorom DSSvalidator2.</p>
+    <div class="sub-hero">
+<div class="center-logo-wrap">
+  <img class="center-logo-img" src="./Orden_RUKE_1772802905749.webp" alt="Logo za javni ulaz Orden RUKE" style="border-color:#facc15;" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';">
+  <span class="center-logo-fallback" style="display:none;border-color:#facc15;">RUKE</span>
+</div>
+      <h2>Javni ulaz — Sluzbeni Akti i Nalazi Validacije</h2>
+      <p class="muted">Izravno preuzimanje PDF nalaza, zapisnika i QR omotnica generiranih AArch64 motorom DSSvalidator2.</p>
+    </div>
     <div class="act-grid">
       <div class="act-item">
         <div><strong>Nalaz_Validacije_Zajednica_RUKE.pdf</strong><div class="muted">Sluzbeni forenzicki nalaz validacije</div></div>
@@ -196,18 +211,13 @@ body {
   </section>
 
   <section id="panel-member" class="card hidden">
-    <div class="member-head">
-<svg class="emblem-svg" viewBox="0 0 96 96" width="72" height="72" role="img" aria-label="Amblem clanova Zajednice RUKE">
-  <circle cx="48" cy="48" r="43" fill="#0d1524" stroke="#3b82f6" stroke-width="3.5"/>
-  <circle cx="48" cy="48" r="36" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="1.2" stroke-dasharray="4 4"/>
-  <polygon points="48,18 70,48 48,44 26,48" fill="#3b82f6" opacity="0.92"/>
-  <polygon points="48,78 70,48 48,52 26,48" fill="#e2e8f0" opacity="0.85"/>
-  <circle cx="48" cy="48" r="5" fill="#0b111e" stroke="#3b82f6" stroke-width="2"/>
-</svg>
-      <div>
-        <h2>Privatni pretinac za clanove</h2>
-        <p class="muted">Lokalna autorizacija clanova i uvid u radne akte bez slanja podataka na udaljeni poslužitelj.</p>
-      </div>
+    <div class="sub-hero">
+<div class="center-logo-wrap">
+  <img class="center-logo-img" src="./RUKE_Tetragramaton_1794478484301.jpg" alt="Logo za privatni pretinac clanova RUKE Tetragramaton" style="border-color:#3b82f6;" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';">
+  <span class="center-logo-fallback" style="display:none;border-color:#3b82f6;">RUKE</span>
+</div>
+      <h2>Privatni pretinac clanova</h2>
+      <p class="muted">Lokalna autorizacija clanova i uvid u radne akte bez slanja podataka na udaljeni posluzitelj.</p>
     </div>
     <div id="member-lock" class="pin-row">
       <input id="member-pin" class="pin-input" type="password" placeholder="Unesite clanski PIN..." aria-label="Clanski PIN">
@@ -218,7 +228,7 @@ body {
     <div id="member-vault" class="hidden" style="margin-top:14px;">
       <div class="act-grid">
         <div class="act-item">
-          <div><strong>MANIFEST_SHA256_HEP.txt</strong><div class="muted">Kontrolni popis sažetaka i akata</div></div>
+          <div><strong>MANIFEST_SHA256_HEP.txt</strong><div class="muted">Kontrolni popis sazetaka i akata</div></div>
           <a class="btn-action btn-green" href="./MANIFEST_SHA256_HEP.txt" download>Preuzmi Manifest</a>
         </div>
         <div class="act-item">
