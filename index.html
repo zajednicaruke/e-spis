@@ -129,8 +129,10 @@ body {
   text-align: center;
   display: inline-block;
 }
+.btn-action:disabled { opacity: 0.45; cursor: not-allowed; }
 .btn-green { background: var(--green); color: #052e16; box-shadow: 0 3px 0 var(--green-dark); }
 .btn-red { background: var(--red); color: #ffffff; box-shadow: 0 3px 0 var(--red-dark); }
+.btn-blue { background: var(--blue); color: #ffffff; box-shadow: 0 3px 0 var(--blue-dark); }
 .pin-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
 .pin-input {
   flex: 1 1 210px;
@@ -150,26 +152,30 @@ body {
   background: rgba(15, 25, 43, 0.65);
   cursor: pointer;
 }
-.hash-box {
+.hash-box, .cert-box {
   margin-top: 12px;
-  padding: 12px;
+  padding: 14px;
   border-radius: 10px;
   background: #080d17;
   border: 1px solid var(--line);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.85rem;
+  font-size: 0.84rem;
+  white-space: pre-wrap;
   word-break: break-all;
 }
+.action-bar { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
 .hidden { display: none; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header class="hero">
-<div class="center-logo-wrap">
-  <img class="center-logo-img" src="./EU_RUKE_1793640051705.webp" alt="Glavno sucelje izbornika EU RUKE" style="border-color:#facc15;" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';">
-  <span class="center-logo-fallback" style="display:none;border-color:#facc15;">RUKE</span>
-</div>
+<svg viewBox="0 0 80 80" width="54" height="54" role="img" aria-label="Glavni logotip Zajednica RUKE" style="flex:0 0 auto;">
+  <circle cx="40" cy="40" r="37" fill="#0b1424" stroke="#facc15" stroke-width="3"/>
+  <path d="M40 15 L60 23 V41 C60 53 51 62 40 66 C29 62 20 53 20 41 V23 Z" fill="#13233d" stroke="#60a5fa" stroke-width="2"/>
+  <circle cx="40" cy="39" r="8" fill="none" stroke="#facc15" stroke-width="2.5"/>
+  <circle cx="40" cy="39" r="3" fill="#22c55e"/>
+</svg>
     <h1>Zajednica RUKE — Suvereni Registar e-Spis</h1>
     <div class="sub">OIB: 64517735227 | Deterministicka LSBU / C23 i eIDAS PAdES-B-LTA Validacija</div>
   </header>
@@ -187,10 +193,12 @@ body {
 
   <section id="panel-public" class="card">
     <div class="sub-hero">
-<div class="center-logo-wrap">
-  <img class="center-logo-img" src="./Orden_RUKE_1772802905749.webp" alt="Logo za javni ulaz Orden RUKE" style="border-color:#facc15;" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';">
-  <span class="center-logo-fallback" style="display:none;border-color:#facc15;">RUKE</span>
-</div>
+<svg viewBox="0 0 64 64" width="38" height="38" role="img" aria-label="Logotip Javni pretinac" style="flex:0 0 auto;">
+  <circle cx="32" cy="32" r="29" fill="#111c30" stroke="#facc15" stroke-width="2.5"/>
+  <rect x="17" y="21" width="30" height="23" rx="3" fill="none" stroke="#facc15" stroke-width="2.4"/>
+  <line x1="22" y1="28" x2="42" y2="28" stroke="#e2e8f0" stroke-width="2"/>
+  <line x1="22" y1="34" x2="36" y2="34" stroke="#e2e8f0" stroke-width="2"/>
+</svg>
       <h2>Javni ulaz — Sluzbeni Akti i Nalazi Validacije</h2>
       <p class="muted">Izravno preuzimanje PDF nalaza, zapisnika i QR omotnica generiranih AArch64 motorom DSSvalidator2.</p>
     </div>
@@ -212,10 +220,12 @@ body {
 
   <section id="panel-member" class="card hidden">
     <div class="sub-hero">
-<div class="center-logo-wrap">
-  <img class="center-logo-img" src="./RUKE_Tetragramaton_1794478484301.jpg" alt="Logo za privatni pretinac clanova RUKE Tetragramaton" style="border-color:#3b82f6;" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';">
-  <span class="center-logo-fallback" style="display:none;border-color:#3b82f6;">RUKE</span>
-</div>
+<svg viewBox="0 0 64 64" width="38" height="38" role="img" aria-label="Logotip Privatni pretinac za clanove" style="flex:0 0 auto;">
+  <circle cx="32" cy="32" r="29" fill="#111c30" stroke="#3b82f6" stroke-width="2.5"/>
+  <rect x="21" y="30" width="22" height="16" rx="3" fill="none" stroke="#60a5fa" stroke-width="2.4"/>
+  <path d="M25 30 V24 A7 7 0 0 1 39 24 V30" fill="none" stroke="#60a5fa" stroke-width="2.4"/>
+  <circle cx="32" cy="38" r="2.5" fill="#22c55e"/>
+</svg>
       <h2>Privatni pretinac clanova</h2>
       <p class="muted">Lokalna autorizacija clanova i uvid u radne akte bez slanja podataka na udaljeni posluzitelj.</p>
     </div>
@@ -243,18 +253,30 @@ body {
   </section>
 
   <section class="card">
-    <h2>Lokalna Forenzicka Verifikacija Dokumenta (Zero-Server Exfiltration)</h2>
-    <p class="muted">Ucitajte izvorni PDF ili tekstualni akt izravno u memoriju preglednika radi lokalne FIPS 180-4 SHA-256 verifikacije.</p>
+    <h2>Lokalna Forenzicka Verifikacija, Potvrda i Digitalni Izvornik</h2>
+    <p class="muted">Ucitajte akt u lokalnu memoriju preglednika za izracun SHA-256 sažetka, generiranje Potvrde, provjeru podudaranja s referentnim hashom i ponovno preuzimanje digitalnog izvornika.</p>
     <div id="dropzone" class="dropzone" onclick="document.getElementById('file-input').click()">
-      <div><strong>Kliknite ili ispustite dokument za trenutacnu provjeru</strong></div>
-      <div class="muted">100% lokalna obrada putem WebCrypto API-ja</div>
-      <input id="file-input" type="file" class="hidden" onchange="provjeriDatoteku(this.files[0])">
+      <div><strong>Kliknite ili ispustite akt za ucitavanje i provjeru</strong></div>
+      <div class="muted">100% lokalna obrada putem WebCrypto API-ja (Zero-Server Exfiltration)</div>
+      <input id="file-input" type="file" class="hidden" onchange="obradiAkt(this.files[0])">
     </div>
-    <div id="hash-output" class="hash-box">Ceka se odabir dokumenta...</div>
+    <div id="hash-output" class="hash-box">Ceka se ucitavanje akta...</div>
+    <div class="pin-row">
+      <input id="ref-sha256" class="pin-input" type="text" placeholder="Opcionalno: unesite ocekivani SHA-256 (64 hex znaka) za provjeru izvornika..." aria-label="Ocekivani SHA-256">
+      <button id="btn-check-ref" class="btn-action btn-blue" type="button" onclick="provjeriIzvornik()" disabled>Provjeri izvornik</button>
+    </div>
+    <div class="action-bar">
+      <button id="btn-gen-cert" class="btn-action btn-green" type="button" onclick="generirajPotvrdu()" disabled>Generiraj Potvrdu</button>
+      <button id="btn-dl-cert" class="btn-action btn-green" type="button" onclick="preuzmiPotvrdu()" disabled>Preuzmi Potvrdu (.txt)</button>
+      <button id="btn-dl-orig" class="btn-action btn-red" type="button" onclick="preuzmiIzvornik()" disabled>Preuzmi digitalni izvornik</button>
+    </div>
+    <div id="cert-output" class="cert-box hidden"></div>
   </section>
 </div>
 
 <script>
+let zadnjiAkt = null;
+let zadnjaPotvrdaTekst = '';
 function prebaciPretinac(mode) {
   const pubCard = document.getElementById('panel-public');
   const memCard = document.getElementById('panel-member');
@@ -292,19 +314,89 @@ function zakljucajPretinac() {
   document.getElementById('member-vault').classList.add('hidden');
   document.getElementById('member-status').textContent = 'Status: Zakljucano.';
 }
-async function provjeriDatoteku(file) {
+async function obradiAkt(file) {
   if (!file) return;
   const box = document.getElementById('hash-output');
   const buf = await file.arrayBuffer();
   const digest = await crypto.subtle.digest('SHA-256', buf);
   const hex = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
   const kod = hex.slice(0, 4).toUpperCase() + '-' + hex.slice(4, 8).toUpperCase();
-  box.textContent = 'Datoteka: ' + file.name + ' (' + file.size + ' B) | Kontrolni kod: [' + kod + '] | SHA-256: ' + hex;
+  zadnjiAkt = { name: file.name, size: file.size, type: file.type || 'application/octet-stream', hex: hex, kod: kod, blob: new Blob([buf], { type: file.type || 'application/octet-stream' }), ts: new Date().toISOString() };
+  box.textContent =
+    'Ucitani akt: ' + zadnjiAkt.name + '\n' +
+    'Velicina:     ' + zadnjiAkt.size + ' bajtova\n' +
+    'Kontrolni kod:[' + zadnjiAkt.kod + ']\n' +
+    'SHA-256:      ' + zadnjiAkt.hex;
+  document.getElementById('btn-check-ref').disabled = false;
+  document.getElementById('btn-gen-cert').disabled = false;
+  document.getElementById('btn-dl-orig').disabled = false;
+  generirajPotvrdu();
+}
+function provjeriIzvornik() {
+  if (!zadnjiAkt) return;
+  const refRaw = document.getElementById('ref-sha256').value.trim().toLowerCase();
+  const certBox = document.getElementById('cert-output');
+  certBox.classList.remove('hidden');
+  if (!refRaw) {
+    certBox.textContent = 'Digitalni izvornik u memoriji: ' + zadnjiAkt.name + ' (' + zadnjiAkt.size + ' B) | SHA-256: ' + zadnjiAkt.hex + ' | Kontrolni kod: [' + zadnjiAkt.kod + ']';
+    return;
+  }
+  const match = (refRaw === zadnjiAkt.hex);
+  certBox.textContent =
+    (match ? 'PODUDARANJE POTVRDJENO] Digitalni izvornik je bajt-po-bajt istovjetan referentnom SHA-256.' : '[NEPODUDARANJE / MUTACIJA] Izracunani SHA-256 ne odgovara unesenom referentnom otisku!') + '\n' +
+    'Akt:          ' + zadnjiAkt.name + '\n' +
+    'Izracunato:   ' + zadnjiAkt.hex + '\n' +
+    'Referentno:   ' + refRaw;
+}
+function generirajPotvrdu() {
+  if (!zadnjiAkt) return;
+  const refRaw = document.getElementById('ref-sha256').value.trim().toLowerCase();
+  const refStatus = refRaw ? (refRaw === zadnjiAkt.hex ? 'PODUDARA SE' : 'NE PODUDARA SE') : 'NIJE ZADAN REFERENTNI HASH';
+  zadnjaPotvrdaTekst =
+    '========================================================================\n' +
+    'POTVRDA O LOKALNOJ FORENZICKOJ VERIFIKACIJI AKTA (Zajednica RUKE)\n' +
+    '========================================================================\n' +
+    'Registar:         e-Spis (OIB: 64517735227)\n' +
+    'Vrijeme provjere: ' + zadnjiAkt.ts + '\n' +
+    'Naziv akta:       ' + zadnjiAkt.name + '\n' +
+    'Velicina:         ' + zadnjiAkt.size + ' bajtova\n' +
+    'Kontrolni kod:    [' + zadnjiAkt.kod + ']\n' +
+    'SHA-256:          ' + zadnjiAkt.hex + '\n' +
+    'Usporedba:        ' + refStatus + '\n' +
+    'Obrada:           Lokalno u pregledniku (WebCrypto FIPS 180-4)\n' +
+    '========================================================================\n';
+  const certBox = document.getElementById('cert-output');
+  certBox.classList.remove('hidden');
+  certBox.textContent = zadnjaPotvrdaTekst;
+  document.getElementById('btn-dl-cert').disabled = false;
+}
+function preuzmiPotvrdu() {
+  if (!zadnjaPotvrdaTekst || !zadnjiAkt) return;
+  const blob = new Blob([zadnjaPotvrdaTekst], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'Potvrda_' + zadnjiAkt.name + '.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function preuzmiIzvornik() {
+  if (!zadnjiAkt || !zadnjiAkt.blob) return;
+  const url = URL.createObjectURL(zadnjiAkt.blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = zadnjiAkt.name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 const dz = document.getElementById('dropzone');
 dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.borderColor = '#facc15'; });
 dz.addEventListener('dragleave', () => { dz.style.borderColor = '#3b527a'; });
-dz.addEventListener('drop', e => { e.preventDefault(); dz.style.borderColor = '#3b527a'; if (e.dataTransfer.files.length) provjeriDatoteku(e.dataTransfer.files[0]); });
+dz.addEventListener('drop', e => { e.preventDefault(); dz.style.borderColor = '#3b527a'; if (e.dataTransfer.files.length) obradiAkt(e.dataTransfer.files[0]); });
 </script>
 </body>
 </html>
