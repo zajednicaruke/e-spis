@@ -497,17 +497,21 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
   });
 }
 </script>
-<div id="ruke-qr-dohvat-panel" style="margin-top:16px;padding:12px;border:1px solid #d0d7de;border-radius:8px;display:none">
-  <div id="ruke-qr-status">Provjera SHA-256 upita...</div>
+<div id="ruke-qr-dohvat-panel" style="margin-top:16px;padding:12px;border:1px solid #d0d7de;border-radius:8px;background:#ffffff;color:#111111;display:none">
+  <div id="ruke-qr-status" style="font-weight:600">Provjera SHA-256 upita...</div>
   <div id="ruke-qr-meta" style="margin-top:8px;font-size:0.95rem"></div>
   <div id="ruke-qr-akcija" style="margin-top:10px"></div>
 </div>
 <script>
 (async function () {
   const SUPA_URL = "https://ydeswffyfomboflcvnfm.supabase.co";
-  const SUPA_ANON_KEY = "sb_publishable_F-F5ztxJOK9VlyBgQHEW-A_-G6G7l2r";
+  const SUPA_KEY = "sb_publishable_F-F5ztxJOK9VlyBgQHEW-A_-G6G7l2r";
   const BUCKET = "QES-PDF";
-  const TABLICA = "espis_registar";
+  const ZNANI = {
+    "2320acf57020219c061ac13318a6359a46afdde7bcc42c0cb47a43798cd167dc": "2320acf57020_Zahtjev_CIP_ISBN_Zajednica_RUKE.pdf",
+    "39d4227b5a03fa50e043028b1bac9d384cf4afcc729a728842d643125fabb1a9": "39d4227b5a03_Studija_Skandal_TIGRA_od_PAPIRA-v2.pdf",
+    "0f4e42f58b7591038cc6b1bfa25dc69230780da8d3061f6b8b764461c7ee3971": "0f4e42f58b75_Studija_Skandal_TIGRA_od_PAPIRA.pdf"
+  };
   const params = new URLSearchParams(window.location.search);
   const rawSha = (params.get("sha256") || "").trim().toLowerCase();
   if (!/^[0-9a-f]{64}$/.test(rawSha)) return;
@@ -518,54 +522,39 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
   if (!panel || !statusEl || !metaEl || !akcijaEl) return;
   panel.style.display = "block";
   const kod = `[${rawSha.slice(0, 4)}-${rawSha.slice(4, 8)}]`.toUpperCase();
-  statusEl.textContent = `Tražim podnesak ${kod} (SHA-256: ${rawSha})...`;
-  async function sha256Hex(arrayBuffer) {
-    const hashBuf = await crypto.subtle.digest("SHA-256", arrayBuffer);
-    return Array.from(new Uint8Array(hashBuf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  const naziv = ZNANI[rawSha] || `${rawSha.slice(0, 12)}_podnesak.pdf`;
+  const pdfUrl = `${SUPA_URL}/storage/v1/object/public/${BUCKET}/${encodeURIComponent(naziv)}`;
+  metaEl.innerHTML =
+    `<div><b>Kontrolni kod:</b> ${kod}</div>` +
+    `<div><b>QES osobe:</b> NE / NEMA QES OSOBE</div>` +
+    `<div><b>Automatski QR / zapis institucije:</b> NE</div>` +
+    `<div><b>Izvor oblaka:</b> <a href="${pdfUrl}" target="_blank" rel="noopener">Izravni URL u QES-PDF</a></div>`;
+  async function sha256Hex(buf) {
+    const digest = await crypto.subtle.digest("SHA-256", buf);
+    return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
   }
+  statusEl.textContent = `Dohvaćam i provjeravam ${kod}...`;
   try {
-    let regUrl = `${SUPA_URL}/rest/v1/${TABLICA}?sha256_cjeloviti=eq.${rawSha}&select=*`;
-    let res = await fetch(regUrl, { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } });
-    if (!res.ok) {
-      regUrl = `${SUPA_URL}/rest/v1/${TABLICA}?sha256=eq.${rawSha}&select=*`;
-      res = await fetch(regUrl, { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } });
-    }
-    if (!res.ok) throw new Error(`HTTP ${res.status} pri upitu na ${TABLICA}`);
-    const rows = await res.json();
-    if (!Array.isArray(rows) || rows.length === 0) {
-      statusEl.textContent = `[!] Zapis za SHA-256 ${rawSha} nije pronađen u tablici ${TABLICA}.`;
+    const r = await fetch(pdfUrl, { cache: "no-store" });
+    if (!r.ok) {
+      statusEl.textContent = `[!] Greška dohvata (HTTP ${r.status}). Otvori izravni URL iznad.`;
       return;
     }
-    const rec = rows[0];
-    const qesOsobe = rec.qes_osobe ?? "NE / NEMA QES OSOBE";
-    const zapisInst = rec.zapis_institucije ?? rec.automatski_qr ?? "NE";
-    const nazivPdf = rec.naziv_datoteke || `${rawSha.slice(0, 12)}_podnesak.pdf`;
-    const objPath = rec.storage_putanja || rec.storage_path || `${rawSha}.pdf`;
-    metaEl.innerHTML =
-      `<div><b>Kontrolni kod:</b> ${kod}</div>` +
-      `<div><b>KLASA / URBROJ:</b> ${rec.klasa || "-"} / ${rec.urbroj || "-"}</div>` +
-      `<div><b>QES osobe:</b> ${qesOsobe}</div>` +
-      `<div><b>Automatski QR / zapis institucije:</b> ${zapisInst}</div>`;
-    const pdfUrl = `${SUPA_URL}/storage/v1/object/public/${BUCKET}/${encodeURIComponent(objPath)}`;
-    const pdfRes = await fetch(pdfUrl);
-    if (!pdfRes.ok) {
-      statusEl.textContent = `[!] Metapodaci nađeni, ali PDF nije dostupan u bucketu ${BUCKET} (HTTP ${pdfRes.status}).`;
-      return;
-    }
-    const buf = await pdfRes.arrayBuffer();
-    const stvarniSha = await sha256Hex(buf);
-    if (stvarniSha !== rawSha) {
-      statusEl.textContent = `[XX] UPOZORENJE: SHA-256 preuzete datoteke (${stvarniSha}) ne odgovara QR sažetku (${rawSha}).`;
+    const buf = await r.arrayBuffer();
+    const calcSha = await sha256Hex(buf);
+    if (calcSha !== rawSha) {
+      statusEl.textContent = `[XX] SHA-256 ne odgovara (${calcSha} != ${rawSha}).`;
       return;
     }
     const blob = new Blob([buf], { type: "application/pdf" });
     const blobUrl = URL.createObjectURL(blob);
-    statusEl.textContent = `[OK] Izvornik potvrđen (SHA-256 podudaran) za ${kod}.`;
-    akcijaEl.innerHTML = `<a href="${blobUrl}" download="${nazivPdf}">Preuzmi izvorni PDF (${nazivPdf})</a>`;
-  } catch (err) {
-    statusEl.textContent = `[XX] Dohvat preko Supabasea nije uspio: ${err.message || err}`;
+    statusEl.textContent = `[OK] SHA-256 potvrđen (${kod}) — spremno za preuzimanje.`;
+    akcijaEl.innerHTML = `<a id="ruke-dl-link" href="${blobUrl}" download="${naziv}" style="display:inline-block;padding:8px 14px;background:#1f6feb;color:#fff;text-decoration:none;border-radius:6px">Preuzmi izvorni PDF (${naziv})</a>`;
+  } catch (e) {
+    statusEl.textContent = `[!] Dohvat blokiran u pregledniku (${e.message || e}). Klikni "Izravni URL u QES-PDF" iznad.`;
   }
 })();
 </script>
+
 </body>
 </html>
