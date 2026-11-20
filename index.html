@@ -497,7 +497,7 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
   });
 }
 </script>
-<script id="ruke-qr-iso-v5">
+<script id="ruke-qr-iso-v6">
 (function () {
   const PORTAL_BASE = "https://zajednicaruke.github.io/e-spis/";
   const QES_BASE = "https://ydeswffyfomboflcvnfm.supabase.co/storage/v1/object/public/QES-PDF";
@@ -507,7 +507,6 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
   let zadnjiPdfBlobUrl = "";
   let zadnjiPdfNaziv = "";
 
-  // GF(256) tablice za Reed-Solomon (polinom 0x11d)
   const EXP = new Uint8Array(512);
   const LOG = new Uint8Array(256);
   (function initGF() {
@@ -552,7 +551,6 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
     return ecc;
   }
 
-  // ISO/IEC 18004 ECC-L kapaciteti (byte mode) za verzije 1..6
   const VER_INFO = {
     1: { total: 26,  ec: 7  },
     2: { total: 44,  ec: 10 },
@@ -567,9 +565,7 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
     let ver = 0;
     for (let v = 1; v <= 6; v++) {
       const dataCap = VER_INFO[v].total - VER_INFO[v].ec;
-      // 4 bita mode (0100) + 8 bita count + utf8.length*8 bita
-      const neededBits = 4 + 8 + utf8.length * 8;
-      if (Math.ceil(neededBits / 8) <= dataCap) {
+      if (Math.ceil((12 + utf8.length * 8) / 8) <= dataCap) {
         ver = v;
         break;
       }
@@ -583,7 +579,7 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
       for (let i = len - 1; i >= 0; i--) bits.push((val >>> i) & 1);
     }
 
-    pushBits(0b0100, 4); // byte mode
+    pushBits(0b0100, 4);
     pushBits(utf8.length, 8);
     for (const b of utf8) pushBits(b, 8);
 
@@ -611,12 +607,11 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
     for (const cw of fullCw) {
       for (let i = 7; i >= 0; i--) stream.push((cw >>> i) & 1);
     }
-    // remainder bits
     const remBits = { 1: 0, 2: 7, 3: 7, 4: 7, 5: 7, 6: 7 }[ver] || 0;
     for (let i = 0; i < remBits; i++) stream.push(0);
 
     const size = 17 + 4 * ver;
-    const mat = Array.from({ length: size }, () => new Int8Array(size)); // 0=empty, 1=dark, -1=light
+    const mat = Array.from({ length: size }, () => new Int8Array(size));
     const reserved = Array.from({ length: size }, () => new Uint8Array(size));
 
     function setFunc(r, c, dark) {
@@ -656,9 +651,8 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
       setFunc(6, i, i % 2 === 0);
       setFunc(i, 6, i % 2 === 0);
     }
-    setFunc(size - 8, 8, true); // dark module
+    setFunc(size - 8, 8, true);
 
-    // rezerviraj format info polja
     for (let i = 0; i < 9; i++) {
       if (i !== 6) { reserved[8][i] = 1; reserved[i][8] = 1; }
     }
@@ -667,7 +661,6 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
       reserved[size - 1 - i][8] = 1;
     }
 
-    // upis podataka cik-cak
     let bitPos = 0;
     let dirUp = true;
     for (let col = size - 1; col >= 1; col -= 2) {
@@ -686,18 +679,15 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
       dirUp = !dirUp;
     }
 
-    // maska 0: (r + c) % 2 === 0
-    function mask0(r, c) { return (r + c) % 2 === 0; }
     for (let r = 0; r < size; r++) {
       for (let c = 0; c < size; c++) {
         if (!reserved[r][c]) {
-          const dark = (mat[r][c] === 1) ^ mask0(r, c);
+          const dark = (mat[r][c] === 1) ^ ((r + c) % 2 === 0);
           mat[r][c] = dark ? 1 : -1;
         }
       }
     }
 
-    // ECC-L (01) + mask 0 (000) => 5 bita: 01000
     const fmtData = 0b01000;
     let rem = fmtData << 10;
     const genPoly = 0b10100110111;
@@ -705,9 +695,8 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
       if ((rem >>> i) & 1) rem ^= (genPoly << (i - 10));
     }
     const fmtBits15 = ((fmtData << 10) | (rem & 0x3ff)) ^ 0b101010000010010;
-
     function bit15(idx) { return ((fmtBits15 >>> (14 - idx)) & 1) === 1; }
-    // postavi 15 format bitova
+
     const horizC = [0, 1, 2, 3, 4, 5, 7, 8, size - 8, size - 7, size - 6, size - 5, size - 4, size - 3, size - 2];
     const vertR  = [size - 1, size - 2, size - 3, size - 4, size - 5, size - 6, size - 7, 8, 7, 5, 4, 3, 2, 1, 0];
     for (let i = 0; i < 15; i++) {
@@ -718,7 +707,7 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
     return { mat, size, ver };
   }
 
-  function renderIsoQrDataUrl(text, pxSize) {
+  function renderIsoQrCanvas(text, pxSize) {
     const qr = encodeIsoQrMatrix(text);
     const canvas = document.createElement("canvas");
     canvas.width = pxSize;
@@ -726,7 +715,7 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
     const ctx = canvas.getContext("2d");
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, pxSize, pxSize);
-    if (!qr) return canvas.toDataURL("image/png");
+    if (!qr) return canvas;
 
     const quiet = 4;
     const totalMod = qr.size + quiet * 2;
@@ -742,39 +731,38 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
         }
       }
     }
-    return canvas.toDataURL("image/png");
+    return canvas;
   }
 
-  function nadjiPodatkeZapisa() {
+  function nadjiPodatke() {
     const q = new URLSearchParams(window.location.search);
     let sha = (q.get("sha256") || "").trim().toLowerCase();
-    let brojZapisa = (q.get("broj") || "").trim();
-    let kontrolniZapis = (q.get("kod") || "").trim().toUpperCase();
+    let kod = (q.get("kod") || "").trim().toUpperCase();
+    let broj = (q.get("broj") || "").trim();
 
     for (const el of document.querySelectorAll("input, textarea, select")) {
-      const val = (el.value || "").trim();
-      const low = val.toLowerCase();
+      const v = (el.value || "").trim();
+      const low = v.toLowerCase();
       if (!sha) {
         const m = low.match(/[0-9a-f]{64}/);
         if (m) sha = m[0];
       }
-      if (!kontrolniZapis) {
-        const mk = val.toUpperCase().match(/[0-9A-F]{4}-[0-9A-F]{4}/);
-        if (mk) kontrolniZapis = mk[0];
+      if (!kod) {
+        const mk = v.toUpperCase().match(/[0-9A-F]{4}-[0-9A-F]{4}/);
+        if (mk) kod = mk[0];
       }
-      if (!brojZapisa && val.includes("-") && !/^[0-9a-f]{4}-[0-9a-f]{4}$/i.test(val) && val.length >= 6) {
-        brojZapisa = val;
+      if (!broj && v.includes("-") && !/^[0-9a-f]{4}-[0-9a-f]{4}$/i.test(v) && v.length >= 6) {
+        broj = v;
       }
     }
-
     if (!sha && document.body) {
       const m2 = document.body.innerText.toLowerCase().match(/[0-9a-f]{64}/);
       if (m2) sha = m2[0];
     }
-    if (!kontrolniZapis && /^[0-9a-f]{64}$/.test(sha)) {
-      kontrolniZapis = `${sha.slice(0, 4)}-${sha.slice(4, 8)}`.toUpperCase();
+    if (!kod && /^[0-9a-f]{64}$/.test(sha)) {
+      kod = `${sha.slice(0, 4)}-${sha.slice(4, 8)}`.toUpperCase();
     }
-    return { sha, kontrolniZapis, brojZapisa };
+    return { sha, kod, broj };
   }
 
   async function sha256Hex(buf) {
@@ -782,34 +770,76 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
     return Array.from(new Uint8Array(d)).map((b) => b.toString(16).padStart(2, "0")).join("");
   }
 
-  function nadjiSekciju(naslovDio) {
+  function nadjiSekciju(dio) {
     return Array.from(document.querySelectorAll("section, div, article")).find((el) =>
-      (el.innerText || "").includes(naslovDio)
+      (el.innerText || "").includes(dio)
     ) || null;
   }
 
-  function ispisiDssNalaz(sha, kontrolniZapis, brojZapisa, bytesLen, isPdfHeader, shaMatch) {
-    const kodDisp = kontrolniZapis ? `[${kontrolniZapis}]` : `[${sha.slice(0, 4).toUpperCase()}-${sha.slice(4, 8).toUpperCase()}]`;
-    const sec4 = nadjiSekciju("4) DSS validacija") || nadjiSekciju("DSS validacija");
-    let box = document.getElementById("ruke-dss-qr-nalaz");
+  function prikaziQrNaPodnesak() {
+    const pod = nadjiPodatke();
+    if (!/^[0-9a-f]{64}$/.test(pod.sha)) {
+      alert("Nema aktivnog 64-znakovnog SHA-256 zapisa za Podnesak.");
+      return;
+    }
+    const u = new URL(PORTAL_BASE);
+    u.searchParams.set("sha256", pod.sha);
+    if (pod.kod) u.searchParams.set("kod", pod.kod);
+    if (pod.broj) u.searchParams.set("broj", pod.broj);
+    const qrUri = u.toString();
+
+    const qrCanvas = renderIsoQrCanvas(qrUri, 260);
+    zadnjiQrDataUrl = qrCanvas.toDataURL("image/png");
+    zadnjiQrNaziv = `QR_${pod.kod || pod.sha.slice(0, 8)}.png`;
+
+    const sec3 = nadjiSekciju("3) Generiranje QR koda na Podnesak") || nadjiSekciju("Generiranje QR");
+    if (sec3) {
+      for (const c of sec3.querySelectorAll("canvas")) {
+        const ctx = c.getContext("2d");
+        if (ctx) {
+          c.width = qrCanvas.width;
+          c.height = qrCanvas.height;
+          ctx.drawImage(qrCanvas, 0, 0);
+        }
+      }
+      for (const im of sec3.querySelectorAll("img")) {
+        if (!im.src || im.src.startsWith("data:") || im.alt.toLowerCase().includes("qr")) {
+          im.src = zadnjiQrDataUrl;
+        }
+      }
+      for (const inp of sec3.querySelectorAll("input, textarea")) {
+        if (!inp.value || inp.value.includes("http") || inp.value.includes("Ceka se")) {
+          inp.value = qrUri;
+        }
+      }
+    }
+
+    let box = document.getElementById("ruke-qr-prikaz-v6");
     if (!box) {
       box = document.createElement("div");
-      box.id = "ruke-dss-qr-nalaz";
+      box.id = "ruke-qr-prikaz-v6";
       box.style.marginTop = "10px";
-      box.style.padding = "10px";
-      box.style.border = "1px solid #888";
-      box.style.borderRadius = "6px";
-      (sec4 || document.body).appendChild(box);
+      (sec3 || document.body).appendChild(box);
     }
     box.innerHTML =
-      `<div><b>DSS / Strukturalna provjera preko QR koda ${kodDisp}:</b> ${shaMatch ? "PODUDARA SE" : "NESKLAD"}</div>` +
-      `<div><b>Broj zapisa:</b> ${brojZapisa || "-"} | <b>Zaglavlje %PDF-:</b> ${isPdfHeader ? "DA" : "NE"} | <b>Veličina:</b> ${bytesLen} B</div>` +
-      `<div><b>SHA-256:</b> <code>${sha}</code></div>` +
-      `<div><b>QES osobe:</b> NE (NEMA QES OSOBE) | <b>Automatski QR / zapis institucije:</b> NE</div>`;
+      `<div><b>Kontrolni zapis:</b> [${pod.kod}] | <b>Broj zapisa:</b> ${pod.broj || "-"}</div>` +
+      `<div><b>QR poveznica (preuzimanje i DSS preko QR):</b> <a href="${qrUri}" target="_blank" rel="noopener">${qrUri}</a></div>` +
+      `<div style="margin-top:8px"><img src="${zadnjiQrDataUrl}" alt="QR Podnesak" width="180" height="180" style="border:1px solid #888;padding:4px;background:#fff"></div>` +
+      `<div style="margin-top:8px"><a href="${zadnjiQrDataUrl}" download="${zadnjiQrNaziv}">Izravno preuzmi QR sliku (${zadnjiQrNaziv})</a></div>`;
   }
 
-  async function dohvatiIProvjeri(pod) {
-    const sha = pod.sha;
+  function preuzmiQrSliku() {
+    if (!zadnjiQrDataUrl) prikaziQrNaPodnesak();
+    if (!zadnjiQrDataUrl) return;
+    const a = document.createElement("a");
+    a.href = zadnjiQrDataUrl;
+    a.download = zadnjiQrNaziv;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  async function dohvatiIProvjeriPodnesak(sha) {
     const p12 = sha.slice(0, 12);
     const kandidati = [`${p12}_podnesak.pdf`, `${sha}.pdf`];
     for (const obj of kandidati) {
@@ -819,11 +849,24 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
         if (!r.ok) continue;
         const buf = await r.arrayBuffer();
         const calc = await sha256Hex(buf);
+        if (calc !== sha) return { ok: false, error: `SHA-256 ne podudara (${calc} != ${sha})` };
+
         const u8 = new Uint8Array(buf);
-        const isPdfHeader = u8.length >= 5 && u8[0] === 0x25 && u8[1] === 0x50 && u8[2] === 0x44 && u8[3] === 0x46 && u8[4] === 0x2d;
-        const shaMatch = calc === sha;
-        ispisiDssNalaz(sha, pod.kontrolniZapis, pod.brojZapisa, u8.length, isPdfHeader, shaMatch);
-        if (!shaMatch) return { ok: false, error: `SHA-256 ne podudara (${calc} != ${sha})` };
+        const isPdf = u8.length >= 5 && u8[0] === 0x25 && u8[1] === 0x50 && u8[2] === 0x44 && u8[3] === 0x46 && u8[4] === 0x2d;
+        const sec4 = nadjiSekciju("4) DSS validacija") || nadjiSekciju("DSS validacija");
+        let dssBox = document.getElementById("ruke-dss-rezultat-v6");
+        if (!dssBox) {
+          dssBox = document.createElement("div");
+          dssBox.id = "ruke-dss-rezultat-v6";
+          dssBox.style.marginTop = "10px";
+          dssBox.style.padding = "8px";
+          dssBox.style.border = "1px solid #888";
+          (sec4 || document.body).appendChild(dssBox);
+        }
+        dssBox.innerHTML =
+          `<div><b>DSS / SHA-256 verifikacija:</b> POTVRĐENO (%PDF-: ${isPdf ? "DA" : "NE"}, ${u8.length} B)</div>` +
+          `<div><b>SHA-256:</b> <code>${sha}</code></div>` +
+          `<div><b>QES osobe:</b> NE (NEMA QES OSOBE) | <b>Automatski QR / zapis institucije:</b> NE</div>`;
 
         if (zadnjiPdfBlobUrl) URL.revokeObjectURL(zadnjiPdfBlobUrl);
         const blob = new Blob([buf], { type: "application/pdf" });
@@ -835,66 +878,13 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
     return { ok: false, error: "Podnesak nije pronađen u QES-PDF bucketu za traženi SHA-256." };
   }
 
-  function generirajQrNaPodnesak() {
-    const pod = nadjiPodatkeZapisa();
-    if (!/^[0-9a-f]{64}$/.test(pod.sha)) {
-      alert("Nema aktivnog 64-znakovnog SHA-256 zapisa (učitajte podnesak ili zapis).");
-      return;
-    }
-    const u = new URL(PORTAL_BASE);
-    u.searchParams.set("sha256", pod.sha);
-    if (pod.kontrolniZapis) u.searchParams.set("kod", pod.kontrolniZapis);
-    if (pod.brojZapisa) u.searchParams.set("broj", pod.brojZapisa);
-    const qrUri = u.toString();
-
-    zadnjiQrDataUrl = renderIsoQrDataUrl(qrUri, 260);
-    zadnjiQrNaziv = `QR_${pod.kontrolniZapis || pod.sha.slice(0, 8)}.png`;
-
-    const sec3 = nadjiSekciju("3) Generiranje QR koda na Podnesak") || nadjiSekciju("Generiranje QR");
-    if (sec3) {
-      for (const inp of sec3.querySelectorAll("input, textarea")) {
-        if (!inp.value || inp.value.includes("http") || inp.value.includes("Ceka se")) {
-          inp.value = qrUri;
-        }
-      }
-      for (const el of sec3.querySelectorAll("p, span, div, small")) {
-        if ((el.textContent || "").includes("Ceka se Podnesak")) {
-          el.textContent = `QR URI [${pod.kontrolniZapis}]: ${qrUri}`;
-        }
-      }
-    }
-
-    let box = document.getElementById("ruke-qr-panel-v5");
-    if (!box) {
-      box = document.createElement("div");
-      box.id = "ruke-qr-panel-v5";
-      box.style.marginTop = "10px";
-      (sec3 || document.body).appendChild(box);
-    }
-    box.innerHTML =
-      `<div><b>Kontrolni zapis:</b> [${pod.kontrolniZapis}] | <b>Broj zapisa:</b> ${pod.brojZapisa || "-"}</div>` +
-      `<div><b>QR URI (ISO/IEC 18004):</b> <a href="${qrUri}">${qrUri}</a></div>` +
-      `<div style="margin-top:8px"><img src="${zadnjiQrDataUrl}" alt="ISO QR kod" width="180" height="180" style="border:1px solid #999;padding:4px;background:#fff"></div>`;
-  }
-
-  function preuzmiQrPng() {
-    if (!zadnjiQrDataUrl) generirajQrNaPodnesak();
-    if (!zadnjiQrDataUrl) return;
-    const a = document.createElement("a");
-    a.href = zadnjiQrDataUrl;
-    a.download = zadnjiQrNaziv;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  }
-
   async function preuzmiPodnesak() {
-    const pod = nadjiPodatkeZapisa();
+    const pod = nadjiPodatke();
     if (!/^[0-9a-f]{64}$/.test(pod.sha)) {
-      alert("Nedostaje valjani 64-znakovni SHA-256.");
+      alert("Nema aktivnog 64-znakovnog SHA-256 za preuzimanje Podneska.");
       return;
     }
-    const res = await dohvatiIProvjeri(pod);
+    const res = await dohvatiIProvjeriPodnesak(pod.sha);
     if (!res.ok) {
       alert(res.error);
       return;
@@ -914,21 +904,31 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
 
     if (lbl.includes("generiraj qr")) {
       ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
-      generirajQrNaPodnesak();
+      prikaziQrNaPodnesak();
     } else if (lbl.includes("preuzmi qr")) {
       ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
-      preuzmiQrPng();
-    } else if (lbl.includes("preuzmi izvornik")) {
+      preuzmiQrSliku();
+    } else if (lbl.includes("preuzmi izvornik") || lbl.includes("preuzmi podnesak")) {
       ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
       await preuzmiPodnesak();
     }
   }, true);
 
   window.addEventListener("DOMContentLoaded", async function () {
-    const pod = nadjiPodatkeZapisa();
+    const pod = nadjiPodatke();
     if (/^[0-9a-f]{64}$/.test(pod.sha)) {
-      generirajQrNaPodnesak();
-      await dohvatiIProvjeri(pod);
+      prikaziQrNaPodnesak();
+      const res = await dohvatiIProvjeriPodnesak(pod.sha);
+      if (res.ok) {
+        let dlBox = document.getElementById("ruke-pdf-spreman-v6");
+        if (!dlBox) {
+          dlBox = document.createElement("div");
+          dlBox.id = "ruke-pdf-spreman-v6";
+          dlBox.style.marginTop = "10px";
+          document.body.appendChild(dlBox);
+        }
+        dlBox.innerHTML = `<a href="${res.blobUrl}" download="${res.fname}">Preuzmi izvorni PDF Podneska (${res.fname})</a>`;
+      }
     }
   });
 })();
