@@ -497,19 +497,18 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
   });
 }
 </script>
-<script id="ruke-qr-u-pdf-v10">
+<script id="ruke-qr-iso-v11">
 (function () {
   const PORTAL_BASE = "https://zajednicaruke.github.io/e-spis/";
   const QES_BASE = "https://ydeswffyfomboflcvnfm.supabase.co/storage/v1/object/public/QES-PDF";
 
-  let ucitaniBytes = null;
   let ucitaniIme = "";
   let ucitaniSha = "";
   let zadnjiQrUrl = "";
-  let zadnjiQrPngDataUrl = "";
+  let zadnjiQrPng = "";
   let zadnjiQrIme = "QR_Podnesak.png";
-  let zadnjiUmetnutiPdfUrl = "";
-  let zadnjiUmetnutiPdfIme = "Podnesak_s_QR.pdf";
+  let zadnjiPdfBlobUrl = "";
+  let zadnjiPdfIme = "Podnesak.pdf";
 
   const EXP = new Uint8Array(512);
   const LOG = new Uint8Array(256);
@@ -523,7 +522,7 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
   })();
   const gfMul = (a, b) => (a === 0 || b === 0) ? 0 : EXP[LOG[a] + LOG[b]];
 
-  function rsEncode(data, ecLen) {
+  function rsGenPoly(ecLen) {
     let poly = [1];
     for (let i = 0; i < ecLen; i++) {
       const next = new Array(poly.length + 1).fill(0);
@@ -533,54 +532,170 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
       }
       poly = next;
     }
+    return poly;
+  }
+
+  function rsEncode(data, ecLen) {
+    const gen = rsGenPoly(ecLen);
     const ecc = new Array(ecLen).fill(0);
     for (let i = 0; i < data.length; i++) {
       const factor = data[i] ^ ecc[0];
       ecc.shift(); ecc.push(0);
-      for (let j = 0; j < ecLen; j++) ecc[j] ^= gfMul(poly[j + 1] || 0, factor);
+      for (let j = 0; j < ecLen; j++) ecc[j] ^= gfMul(gen[j + 1], factor);
     }
     return ecc;
   }
 
-  const VER_INFO = {
-    1: { total: 26, ec: 7 }, 2: { total: 44, ec: 10 }, 3: { total: 70, ec: 15 },
-    4: { total: 100, ec: 20 }, 5: { total: 134, ec: 26 }, 6: { total: 172, ec: 18 }
+  // ISO/IEC 18004 ECC-L tablica za verzije 1..10: [totalCodewords, ecPerBlock, blocksG1, cwG1, blocksG2, cwG2, remBits]
+  const QR_L_SPEC = {
+    1:  [26,  7,  1, 19, 0, 0, 0],
+    2:  [44,  10, 1, 34, 0, 0, 7],
+    3:  [70,  15, 1, 55, 0, 0, 7],
+    4:  [100, 20, 1, 80, 0, 0, 7],
+    5:  [134, 26, 1, 108, 0, 0, 7],
+    6:  [172, 18, 2, 68, 0, 0, 7],
+    7:  [196, 20, 2, 78, 0, 0, 0],
+    8:  [242, 24, 2, 97, 0, 0, 0],
+    9:  [292, 30, 2, 116, 0, 0, 0],
+    10: [346, 18, 2, 68, 2, 69, 0]
   };
 
-  function encodeQr(text) {
+  function alignCenters(ver) {
+    if (ver === 1) return [];
+    const dim = 17 + 4 * ver;
+    if (ver === 2) return [6, dim - 7];
+    if (ver === 3) return [6, dim - 7];
+    if (ver === 4) return [6, dim - 7];
+    if (ver === 5) return [6, dim - 7];
+    if (ver === 6) return [6, dim - 7];
+    if (ver === 7) return [6, 22, dim - 7];
+    if (ver === 8) return [6, 24, dim - 7];
+    if (ver === 9) return [6, 26, dim - 7];
+    return [6, 28, dim - 7];
+  }
+
+  function maskFn(maskId, r, c) {
+    switch (maskId) {
+      case 0: return (r + c) % 2 === 0;
+      case 1: return r % 2 === 0;
+      case 2: return c % 3 === 0;
+      case 3: return (r + c) % 3 === 0;
+      case 4: return (Math.floor(r / 2) + Math.floor(c / 3)) % 2 === 0;
+      case 5: return ((r * c) % 2) + ((r * c) % 3) === 0;
+      case 6: return ((((r * c) % 2) + ((r * c) % 3)) % 2) === 0;
+      default: return ((((r + c) % 2) + ((r * c) % 3)) % 2) === 0;
+    }
+  }
+
+  function penaltyScore(mat, size) {
+    let score = 0;
+    for (let r = 0; r < size; r++) {
+      let run = 1;
+      for (let c = 1; c < size; c++) {
+        if (mat[r][c] === mat[r][c - 1]) run++;
+        else { if (run >= 5) score += 3 + (run - 5); run = 1; }
+      }
+      if (run >= 5) score += 3 + (run - 5);
+    }
+    for (let c = 0; c < size; c++) {
+      let run = 1;
+      for (let r = 1; r < size; r++) {
+        if (mat[r][c] === mat[r - 1][c]) run++;
+        else { if (run >= 5) score += 3 + (run - 5); run = 1; }
+      }
+      if (run >= 5) score += 3 + (run - 5);
+    }
+    for (let r = 0; r < size - 1; r++) {
+      for (let c = 0; c < size - 1; c++) {
+        const v = mat[r][c];
+        if (v === mat[r][c + 1] && v === mat[r + 1][c] && v === mat[r + 1][c + 1]) score += 3;
+      }
+    }
+    return score;
+  }
+
+  function formatBits(ecBits, maskId) {
+    const data = ((ecBits & 3) << 3) | (maskId & 7);
+    let rem = data << 10;
+    const poly = 0b10100110111;
+    for (let i = 14; i >= 10; i--) if ((rem >>> i) & 1) rem ^= (poly << (i - 10));
+    return ((data << 10) | (rem & 0x3ff)) ^ 0b101010000010010;
+  }
+
+  function versionBits(ver) {
+    let rem = ver << 12;
+    const poly = 0b1111100100101;
+    for (let i = 17; i >= 12; i--) if ((rem >>> i) & 1) rem ^= (poly << (i - 12));
+    return (ver << 12) | (rem & 0xfff);
+  }
+
+  function buildIsoQr(text) {
     const utf8 = new TextEncoder().encode(text);
+    const countBits = 8; // verzije 1..9 koriste 8-bitni byte count, za 10 podržavamo do 99B
     let ver = 0;
-    for (let v = 1; v <= 6; v++) {
-      const cap = VER_INFO[v].total - VER_INFO[v].ec;
-      if (Math.ceil((12 + utf8.length * 8) / 8) <= cap) { ver = v; break; }
+    for (let v = 1; v <= 10; v++) {
+      const sp = QR_L_SPEC[v];
+      const dataCw = sp[2] * sp[3] + sp[4] * sp[5];
+      const maxBits = dataCw * 8;
+      const needBits = 4 + countBits + utf8.length * 8;
+      if (needBits <= maxBits) { ver = v; break; }
     }
     if (!ver) return null;
-    const info = VER_INFO[ver];
-    const cap = info.total - info.ec;
+
+    const sp = QR_L_SPEC[ver];
+    const [totalCw, ecPerBlk, b1, cw1, b2, cw2, remBits] = sp;
+    const dataCap = b1 * cw1 + b2 * cw2;
     const bits = [];
     const push = (val, len) => { for (let i = len - 1; i >= 0; i--) bits.push((val >>> i) & 1); };
-    push(0b0100, 4); push(utf8.length, 8);
+
+    push(0b0100, 4);
+    push(utf8.length, countBits);
     for (const b of utf8) push(b, 8);
-    const term = Math.min(4, cap * 8 - bits.length);
+    const term = Math.min(4, dataCap * 8 - bits.length);
     if (term > 0) push(0, term);
     while (bits.length % 8 !== 0) bits.push(0);
+
     const cw = [];
     for (let i = 0; i < bits.length; i += 8) {
       let v = 0; for (let j = 0; j < 8; j++) v = (v << 1) | bits[i + j];
       cw.push(v);
     }
-    const pads = [0xec, 0x11]; let p = 0;
-    while (cw.length < cap) { cw.push(pads[p % 2]); p++; }
-    const ecc = rsEncode(cw, info.ec);
+    const pads = [0xec, 0x11]; let pIdx = 0;
+    while (cw.length < dataCap) { cw.push(pads[pIdx % 2]); pIdx++; }
+
+    const dataBlocks = [];
+    const ecBlocks = [];
+    let pos = 0;
+    for (let i = 0; i < b1; i++) {
+      const blk = cw.slice(pos, pos + cw1); pos += cw1;
+      dataBlocks.push(blk);
+      ecBlocks.push(rsEncode(blk, ecPerBlk));
+    }
+    for (let i = 0; i < b2; i++) {
+      const blk = cw.slice(pos, pos + cw2); pos += cw2;
+      dataBlocks.push(blk);
+      ecBlocks.push(rsEncode(blk, ecPerBlk));
+    }
+
+    const finalCw = [];
+    const maxLen = Math.max(cw1, cw2);
+    for (let i = 0; i < maxLen; i++) {
+      for (const blk of dataBlocks) if (i < blk.length) finalCw.push(blk[i]);
+    }
+    for (let i = 0; i < ecPerBlk; i++) {
+      for (const blk of ecBlocks) if (i < blk.length) finalCw.push(blk[i]);
+    }
+
     const stream = [];
-    for (const w of cw.concat(ecc)) for (let i = 7; i >= 0; i--) stream.push((w >>> i) & 1);
-    const rem = { 1: 0, 2: 7, 3: 7, 4: 7, 5: 7, 6: 7 }[ver] || 0;
-    for (let i = 0; i < rem; i++) stream.push(0);
+    for (const w of finalCw) for (let i = 7; i >= 0; i--) stream.push((w >>> i) & 1);
+    for (let i = 0; i < remBits; i++) stream.push(0);
+
     const size = 17 + 4 * ver;
-    const mat = Array.from({ length: size }, () => new Int8Array(size));
+    const base = Array.from({ length: size }, () => new Int8Array(size));
     const res = Array.from({ length: size }, () => new Uint8Array(size));
-    function setF(r, c, d) {
-      if (r >= 0 && r < size && c >= 0 && c < size) { mat[r][c] = d ? 1 : -1; res[r][c] = 1; }
+
+    function setFunc(r, c, dark) {
+      if (r >= 0 && r < size && c >= 0 && c < size) { base[r][c] = dark ? 1 : -1; res[r][c] = 1; }
     }
     function finder(r0, c0) {
       for (let r = -1; r <= 7; r++) for (let c = -1; c <= 7; c++) {
@@ -589,129 +704,90 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
         const box = r >= 0 && r <= 6 && c >= 0 && c <= 6;
         const ring = r === 0 || r === 6 || c === 0 || c === 6;
         const dot = r >= 2 && r <= 4 && c >= 2 && c <= 4;
-        setF(rr, cc, box ? (ring || dot) : false);
+        setFunc(rr, cc, box ? (ring || dot) : false);
       }
     }
     finder(0, 0); finder(0, size - 7); finder(size - 7, 0);
-    if (ver >= 2) {
-      const ap = size - 7;
-      for (let r = -2; r <= 2; r++) for (let c = -2; c <= 2; c++) {
-        const d = Math.max(Math.abs(r), Math.abs(c));
-        setF(ap + r, ap + c, d === 2 || d === 0);
+
+    const centers = alignCenters(ver);
+    for (const r of centers) for (const c of centers) {
+      if ((r === 6 && c === 6) || (r === 6 && c === size - 7) || (r === size - 7 && c === 6)) continue;
+      for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) {
+        const d = Math.max(Math.abs(dr), Math.abs(dc));
+        setFunc(r + dr, c + dc, d === 2 || d === 0);
       }
     }
-    for (let i = 8; i < size - 8; i++) { setF(6, i, i % 2 === 0); setF(i, 6, i % 2 === 0); }
-    setF(size - 8, 8, true);
+
+    for (let i = 8; i < size - 8; i++) {
+      setFunc(6, i, i % 2 === 0);
+      setFunc(i, 6, i % 2 === 0);
+    }
+    setFunc(size - 8, 8, true);
+
     for (let i = 0; i < 9; i++) { if (i !== 6) { res[8][i] = 1; res[i][8] = 1; } }
     for (let i = 0; i < 8; i++) { res[8][size - 1 - i] = 1; res[size - 1 - i][8] = 1; }
-    let idx = 0, up = true;
+    if (ver >= 7) {
+      for (let r = 0; r < 6; r++) for (let c = size - 11; c < size - 8; c++) { res[r][c] = 1; res[c][r] = 1; }
+    }
+
+    let bIdx = 0, up = true;
     for (let col = size - 1; col >= 1; col -= 2) {
       if (col === 6) col = 5;
       const rows = up ? Array.from({ length: size }, (_, k) => size - 1 - k) : Array.from({ length: size }, (_, k) => k);
       for (const r of rows) for (const dc of [0, -1]) {
         const c = col + dc;
         if (c < 0 || res[r][c]) continue;
-        mat[r][c] = (idx < stream.length && stream[idx++]) ? 1 : -1;
+        base[r][c] = (bIdx < stream.length && stream[bIdx++]) ? 1 : -1;
       }
       up = !up;
     }
-    for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) {
-      if (!res[r][c]) mat[r][c] = ((mat[r][c] === 1) ^ ((r + c) % 2 === 0)) ? 1 : -1;
-    }
-    const fmtData = 0b01000; let rBits = fmtData << 10; const poly = 0b10100110111;
-    for (let i = 14; i >= 10; i--) if ((rBits >>> i) & 1) rBits ^= (poly << (i - 10));
-    const fmt = ((fmtData << 10) | (rBits & 0x3ff)) ^ 0b101010000010010;
-    const bAt = (i) => ((fmt >>> (14 - i)) & 1) === 1;
+
     const hC = [0, 1, 2, 3, 4, 5, 7, 8, size - 8, size - 7, size - 6, size - 5, size - 4, size - 3, size - 2];
     const vR = [size - 1, size - 2, size - 3, size - 4, size - 5, size - 6, size - 7, 8, 7, 5, 4, 3, 2, 1, 0];
-    for (let i = 0; i < 15; i++) { mat[8][hC[i]] = bAt(i) ? 1 : -1; mat[vR[i]][8] = bAt(i) ? 1 : -1; }
-    return { mat, size };
+
+    let bestMat = null, bestScore = Infinity;
+    for (let m = 0; m < 8; m++) {
+      const cand = base.map((row) => row.slice());
+      for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) {
+        if (!res[r][c]) cand[r][c] = ((cand[r][c] === 1) ^ maskFn(m, r, c)) ? 1 : -1;
+      }
+      const fb = formatBits(1, m); // ECC-L = 1
+      for (let i = 0; i < 15; i++) {
+        const dark = ((fb >>> (14 - i)) & 1) === 1 ? 1 : -1;
+        cand[8][hC[i]] = dark;
+        cand[vR[i]][8] = dark;
+      }
+      if (ver >= 7) {
+        const vb = versionBits(ver);
+        for (let i = 0; i < 18; i++) {
+          const d = ((vb >>> i) & 1) === 1 ? 1 : -1;
+          const rr = Math.floor(i / 3), cc = size - 11 + (i % 3);
+          cand[rr][cc] = d;
+          cand[cc][rr] = d;
+        }
+      }
+      const sc = penaltyScore(cand, size);
+      if (sc < bestScore) { bestScore = sc; bestMat = cand; }
+    }
+    return { mat: bestMat, size, ver };
   }
 
-  function drawQrToCanvas(canvas, text) {
-    const qr = encodeQr(text);
-    const px = canvas.width || 240;
+  function renderQr(canvas, text) {
+    const qr = buildIsoQr(text);
+    const px = 300;
     canvas.width = px; canvas.height = px;
     const ctx = canvas.getContext("2d");
     ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, px, px);
     if (!qr) return { dataUrl: canvas.toDataURL("image/png"), qr: null };
     const quiet = 4, total = qr.size + quiet * 2;
     const mod = Math.max(2, Math.floor(px / total));
-    const off = Math.floor((px - mod * total) / 2);
+    const draw = mod * total;
+    const off = Math.floor((px - draw) / 2);
     ctx.fillStyle = "#000000";
     for (let r = 0; r < qr.size; r++) for (let c = 0; c < qr.size; c++) {
       if (qr.mat[r][c] === 1) ctx.fillRect(off + (c + quiet) * mod, off + (r + quiet) * mod, mod, mod);
     }
     return { dataUrl: canvas.toDataURL("image/png"), qr };
-  }
-
-  // Pravi stvarni PDF dokument s umetnutim QR kodom (ne dira izvorni podnesak)
-  function kreirajPdfSaUmetnutimQr(qr, sha, qrUri, nazivIzvora) {
-    const kod = `[${sha.slice(0, 4)}-${sha.slice(4, 8)}]`.toUpperCase();
-    const quiet = 3;
-    const total = qr.size + quiet * 2;
-    const boxPt = 140;
-    const cell = boxPt / total;
-    const x0 = 415, y0 = 640; // gornji desni kut A4 stranice
-
-    let gfx = "q 1 1 1 rg 0 0 595 842 re f
-";
-    gfx += "BT /F1 12 Tf 48 790 Td (ZAJEDNICA RUKE - e-SPIS QR PRILOG PODNESKU) Tj ET
-";
-    gfx += `BT /F1 10 Tf 48 770 Td (Kontrolni kod: ${kod} | Izvor: ${(nazivIzvora || "podnesak").replace(/[()\]/g, "_")}) Tj ET
-`;
-    gfx += `BT /F1 9 Tf 48 754 Td (SHA-256 izvornika: ${sha}) Tj ET
-`;
-    gfx += `BT /F1 9 Tf 48 738 Td (QR URI: ${qrUri.replace(/[()\]/g, "_")}) Tj ET
-`;
-    gfx += "BT /F1 9 Tf 48 720 Td (Izvorni podnesak ostaje bajtno netaknut u registru i QES-PDF bucketu.) Tj ET
-";
-
-    // Bijela podloga i crni QR moduli u PDF-u
-    gfx += `q 1 0 0 1 ${x0} ${y0} cm 1 1 1 rg 0 0 ${boxPt} ${boxPt} re f 0 0 0 rg `;
-    for (let r = 0; r < qr.size; r++) {
-      for (let c = 0; c < qr.size; c++) {
-        if (qr.mat[r][c] === 1) {
-          const rx = ((c + quiet) * cell).toFixed(2);
-          const ry = ((total - 1 - (r + quiet)) * cell).toFixed(2);
-          const rw = (cell + 0.05).toFixed(2);
-          gfx += `${rx} ${ry} ${rw} ${rw} re f `;
-        }
-      }
-    }
-    gfx += "Q
-";
-
-    const objs = [
-      "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj
-",
-      "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj
-",
-      "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj
-",
-      "4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj
-",
-      `5 0 obj << /Length ${gfx.length} >> stream
-${gfx}endstream endobj
-`
-    ];
-    let out = "%PDF-1.4
-";
-    const off = [0];
-    for (const o of objs) { off.push(out.length); out += o; }
-    const xref = out.length;
-    out += `xref
-0 ${objs.length + 1}
-0000000000 65535 f 
-`;
-    for (let i = 1; i < off.length; i++) out += String(off[i]).padStart(10, "0") + " 00000 n 
-";
-    out += `trailer << /Size ${objs.length + 1} /Root 1 0 R >>
-startxref
-${xref}
-%%EOF
-`;
-    return new Blob([out], { type: "application/pdf" });
   }
 
   async function sha256Hex(buf) {
@@ -724,7 +800,6 @@ ${xref}
     if (!inp || inp.type !== "file" || !inp.files || !inp.files[0]) return;
     const f = inp.files[0];
     const buf = await f.arrayBuffer();
-    ucitaniBytes = new Uint8Array(buf);
     ucitaniIme = f.name || "podnesak.pdf";
     ucitaniSha = await sha256Hex(buf);
   }, true);
@@ -748,55 +823,42 @@ ${xref}
   window.generirajQrNaPodnesak = function () {
     const sha = aktivniSha();
     if (!/^[0-9a-f]{64}$/.test(sha)) {
-      alert("Nema učitanog ili odabranog Podneska (64-znakovni SHA-256).");
+      alert("Nema aktivnog 64-znakovnog SHA-256 za Podnesak.");
       return;
     }
     zadnjiQrUrl = `${PORTAL_BASE}?sha256=${sha}`;
-    const p8 = sha.slice(0, 8).toUpperCase();
-    zadnjiQrIme = `QR_${p8}.png`;
-    zadnjiUmetnutiPdfIme = `Podnesak_SA_QR_${p8}.pdf`;
-
+    zadnjiQrIme = `QR_${sha.slice(0, 8).toUpperCase()}.png`;
     let c = document.getElementById("qr-canvas");
-    if (!c) { c = document.createElement("canvas"); c.id = "qr-canvas"; c.width = 240; c.height = 240; }
-    const rendered = drawQrToCanvas(c, zadnjiQrUrl);
-    zadnjiQrPngDataUrl = rendered.dataUrl;
-
-    if (zadnjiUmetnutiPdfUrl) URL.revokeObjectURL(zadnjiUmetnutiPdfUrl);
-    if (rendered.qr) {
-      const pdfBlob = kreirajPdfSaUmetnutimQr(rendered.qr, sha, zadnjiQrUrl, ucitaniIme || `${sha.slice(0,12)}_podnesak.pdf`);
-      zadnjiUmetnutiPdfUrl = URL.createObjectURL(pdfBlob);
-    }
-
+    if (!c) { c = document.createElement("canvas"); c.id = "qr-canvas"; c.width = 300; c.height = 300; }
+    const res = renderQr(c, zadnjiQrUrl);
+    zadnjiQrPng = res.dataUrl;
     const btnDl = document.getElementById("btn-qr-dl");
     if (btnDl) btnDl.disabled = false;
 
-    let wrap = document.getElementById("ruke-qr-umetanje-okvir");
+    let wrap = document.getElementById("ruke-qr-iso-box");
     if (!wrap) {
       wrap = document.createElement("div");
-      wrap.id = "ruke-qr-umetanje-okvir";
+      wrap.id = "ruke-qr-iso-box";
       wrap.style.marginTop = "10px"; wrap.style.padding = "10px";
-      wrap.style.border = "1px solid #888"; wrap.style.background = "#fff"; wrap.style.color = "#111";
+      wrap.style.border = "1px solid #777"; wrap.style.background = "#fff"; wrap.style.color = "#111";
       const anchor = btnDl ? btnDl.parentElement : document.body;
       anchor.appendChild(wrap);
     }
     wrap.innerHTML =
-      `<div><b>QR poveznica (Supabase / portal):</b> <a href="${zadnjiQrUrl}" target="_blank" rel="noopener">${zadnjiQrUrl}</a></div>` +
-      `<div style="margin-top:8px"><img src="${zadnjiQrPngDataUrl}" alt="QR Podnesak" width="180" height="180" style="border:1px solid #ccc;padding:4px;background:#fff"></div>` +
-      `<div style="margin-top:8px">` +
-      `<a href="${zadnjiQrPngDataUrl}" download="${zadnjiQrIme}" style="margin-right:12px">Preuzmi QR PNG (${zadnjiQrIme})</a>` +
-      (zadnjiUmetnutiPdfUrl ? `<a href="${zadnjiUmetnutiPdfUrl}" download="${zadnjiUmetnutiPdfIme}">Preuzmi PDF s umetnutim QR-om (${zadnjiUmetnutiPdfIme})</a>` : "") +
-      `</div>`;
+      `<div><b>ISO QR URI (v${res.qr ? res.qr.ver : "?"}):</b> <a href="${zadnjiQrUrl}" target="_blank" rel="noopener">${zadnjiQrUrl}</a></div>` +
+      `<div style="margin-top:8px"><img src="${zadnjiQrPng}" alt="ISO QR" width="200" height="200" style="border:1px solid #ccc;padding:4px;background:#fff"></div>` +
+      `<div style="margin-top:8px"><a href="${zadnjiQrPng}" download="${zadnjiQrIme}">Preuzmi QR PNG (${zadnjiQrIme})</a></div>`;
   };
 
   window.preuzmiQrPodneska = function () {
-    if (!zadnjiQrPngDataUrl) window.generirajQrNaPodnesak();
-    if (!zadnjiQrPngDataUrl) return;
+    if (!zadnjiQrPng) window.generirajQrNaPodnesak();
+    if (!zadnjiQrPng) return;
     const a = document.createElement("a");
-    a.href = zadnjiQrPngDataUrl; a.download = zadnjiQrIme;
+    a.href = zadnjiQrPng; a.download = zadnjiQrIme;
     document.body.appendChild(a); a.click(); a.remove();
   };
 
-  async function dohvatIzvornikaIzSupabase(sha) {
+  async function preuzmiIzSupabase(sha) {
     const p12 = sha.slice(0, 12);
     const urls = [`${QES_BASE}/${p12}_podnesak.pdf?t=${Date.now()}`, `${QES_BASE}/${sha}.pdf?t=${Date.now()}`];
     for (const u of urls) {
@@ -807,7 +869,10 @@ ${xref}
         const calc = await sha256Hex(buf);
         if (calc !== sha) continue;
         const blob = new Blob([buf], { type: "application/pdf" });
-        return { blobUrl: URL.createObjectURL(blob), fname: `${p12}_podnesak.pdf` };
+        if (zadnjiPdfBlobUrl) URL.revokeObjectURL(zadnjiPdfBlobUrl);
+        zadnjiPdfBlobUrl = URL.createObjectURL(blob);
+        zadnjiPdfIme = `${p12}_podnesak.pdf`;
+        return { blobUrl: zadnjiPdfBlobUrl, fname: zadnjiPdfIme };
       } catch (_) {}
     }
     return null;
@@ -827,12 +892,11 @@ ${xref}
       const sha = aktivniSha();
       if (/^[0-9a-f]{64}$/.test(sha)) {
         ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
-        const res = await dohvatIzvornikaIzSupabase(sha);
-        if (!res) { alert("Izvornik podneska nije pronađen u QES-PDF bucketu."); return; }
+        const res = await preuzmiIzSupabase(sha);
+        if (!res) { alert("Podnesak nije pronađen u QES-PDF bucketu."); return; }
         const a = document.createElement("a");
         a.href = res.blobUrl; a.download = res.fname;
         document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(() => URL.revokeObjectURL(res.blobUrl), 15000);
       }
     }
   }, true);
@@ -841,7 +905,7 @@ ${xref}
     const sha = aktivniSha();
     if (/^[0-9a-f]{64}$/.test(sha)) {
       window.generirajQrNaPodnesak();
-      const res = await dohvatIzvornikaIzSupabase(sha);
+      const res = await preuzmiIzSupabase(sha);
       if (res) {
         let dlBox = document.getElementById("ruke-qr-izravno-pdf");
         if (!dlBox) {
@@ -851,7 +915,7 @@ ${xref}
           dlBox.style.border = "1px solid #2da44e"; dlBox.style.background = "#fff"; dlBox.style.color = "#111";
           document.body.appendChild(dlBox);
         }
-        dlBox.innerHTML = `<b>Izvorni podnesak preko QR koda spreman:</b> <a href="${res.blobUrl}" download="${res.fname}">${res.fname}</a>`;
+        dlBox.innerHTML = `<b>Preuzimanje preko QR koda spremno:</b> <a href="${res.blobUrl}" download="${res.fname}">${res.fname}</a>`;
       }
     }
   });
