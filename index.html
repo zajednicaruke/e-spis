@@ -497,17 +497,17 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
   });
 }
 </script>
-<script id="ruke-qr-i-dohvat-dinamic">
+<script id="ruke-dohvat-v3">
 (function () {
-  const PORTAL_BASE = "https://zajednicaruke.github.io/e-spis/";
-  const SUPA_QES_BASE = "https://ydeswffyfomboflcvnfm.supabase.co/storage/v1/object/public/QES-PDF";
-  let zadnjiQrDataUrl = "";
-  let zadnjiQrNaziv = "QR_Podnesak_eSpis.png";
+  const SUPA_URL = "https://ydeswffyfomboflcvnfm.supabase.co";
+  const SUPA_KEY = "sb_publishable_F-F5ztxJOK9VlyBgQHEW-A_-G6G7l2r";
+  const BUCKET = "QES-PDF";
+  const QES_BASE = `${SUPA_URL}/storage/v1/object/public/${BUCKET}`;
 
   function nadjiSha() {
     const q = new URLSearchParams(window.location.search);
-    const fromUrl = (q.get("sha256") || "").trim().toLowerCase();
-    if (/^[0-9a-f]{64}$/.test(fromUrl)) return fromUrl;
+    const u = (q.get("sha256") || "").trim().toLowerCase();
+    if (/^[0-9a-f]{64}$/.test(u)) return u;
     for (const el of document.querySelectorAll("input, textarea, select")) {
       const m = ((el.value || "").trim().toLowerCase()).match(/[0-9a-f]{64}/);
       if (m) return m[0];
@@ -524,141 +524,77 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
     return Array.from(new Uint8Array(d)).map((b) => b.toString(16).padStart(2, "0")).join("");
   }
 
-  function napraviQrCanvas(text, size) {
-    const canvas = document.createElement("canvas");
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext("2d");
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, size, size);
-    const n = 25;
-    const cell = Math.floor((size - 32) / n);
-    const offset = Math.floor((size - cell * n) / 2);
-    const grid = Array.from({ length: n }, () => Array(n).fill(false));
-    function drawFinder(r0, c0) {
-      for (let r = -1; r <= 7; r++) {
-        for (let c = -1; c <= 7; c++) {
-          const rr = r0 + r, cc = c0 + c;
-          if (rr < 0 || rr >= n || cc < 0 || cc >= n) continue;
-          const onBorder = r === 0 || r === 6 || c === 0 || c === 6;
-          const onCenter = r >= 2 && r <= 4 && c >= 2 && c <= 4;
-          grid[rr][cc] = (r >= 0 && r <= 6 && c >= 0 && c <= 6) ? (onBorder || onCenter) : false;
+  async function nadjiObjekteZaPrefiks(p12) {
+    const lista = [`${p12}_podnesak.pdf`, `${p12}.pdf`];
+    try {
+      const r = await fetch(`${SUPA_URL}/storage/v1/object/list/${BUCKET}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPA_KEY,
+          "Authorization": `Bearer ${SUPA_KEY}`
+        },
+        body: JSON.stringify({ prefix: p12, limit: 20 })
+      });
+      if (r.ok) {
+        const items = await r.json();
+        if (Array.isArray(items)) {
+          for (const it of items) {
+            if (it && it.name && String(it.name).toLowerCase().endsWith(".pdf")) {
+              if (!lista.includes(it.name)) lista.push(it.name);
+            }
+          }
         }
       }
-    }
-    drawFinder(0, 0);
-    drawFinder(0, n - 7);
-    drawFinder(n - 7, 0);
-    let h = 2166136261 >>> 0;
-    for (let i = 0; i < text.length; i++) {
-      h ^= text.charCodeAt(i);
-      h = Math.imul(h, 16777619) >>> 0;
-    }
-    let seed = h || 0x9e3779b9;
-    for (let r = 0; r < n; r++) {
-      for (let c = 0; c < n; c++) {
-        if ((r < 8 && c < 8) || (r < 8 && c >= n - 8) || (r >= n - 8 && c < 8)) continue;
-        seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
-        grid[r][c] = ((seed >>> 24) & 1) === 1;
-      }
-    }
-    ctx.fillStyle = "#000000";
-    for (let r = 0; r < n; r++) {
-      for (let c = 0; c < n; c++) {
-        if (grid[r][c]) ctx.fillRect(offset + c * cell, offset + r * cell, cell, cell);
-      }
-    }
-    return canvas;
+    } catch (_) {}
+    return lista;
   }
 
-  async function handlePreuzmiIzvornik() {
-    const sha = nadjiSha();
-    if (!/^[0-9a-f]{64}$/.test(sha)) {
-      alert("Unesite ili odaberite valjani 64-znakovni SHA-256 zapis.");
-      return;
-    }
-    const kandidati = [
-      `${SUPA_QES_BASE}/${sha.slice(0, 12)}_podnesak.pdf`,
-      `${SUPA_QES_BASE}/${sha}.pdf`
-    ];
-    let pronadeno = null;
-    for (const u of kandidati) {
+  async function dohvatiIProvjeriPdf(sha) {
+    const p12 = sha.slice(0, 12);
+    const kandidati = await nadjiObjekteZaPrefiks(p12);
+    kandidati.push(`${sha}.pdf`);
+    for (const obj of kandidati) {
+      const url = `${QES_BASE}/${obj.split("/").map(encodeURIComponent).join("/")}`;
       try {
-        const r = await fetch(u, { cache: "no-store" });
-        if (r.ok) { pronadeno = { url: u, buf: await r.arrayBuffer() }; break; }
+        const r = await fetch(`${url}?t=${Date.now()}`, { cache: "no-store" });
+        if (!r.ok) continue;
+        const buf = await r.arrayBuffer();
+        const calc = await sha256Hex(buf);
+        if (calc === sha) {
+          const fname = obj.split("/").pop() || `${p12}_podnesak.pdf`;
+          return { ok: true, buf, fname, url };
+        }
       } catch (_) {}
     }
-    if (!pronadeno) {
-      alert("PDF izvornik nije pronađen u Supabase QES-PDF bucketu za traženi SHA-256.");
-      return;
-    }
-    const izracunani = await sha256Hex(pronadeno.buf);
-    if (izracunani !== sha) {
-      alert(`SHA-256 ne podudara izvornik (${izracunani} != ${sha}).`);
-      return;
-    }
-    const naziv = `${sha.slice(0, 12)}_podnesak.pdf`;
-    const blob = new Blob([pronadeno.buf], { type: "application/pdf" });
-    const blobUrl = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = blobUrl;
-    a.download = naziv;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 15000);
-  }
-
-  function handleGenerirajQr() {
-    const sha = nadjiSha();
-    if (!/^[0-9a-f]{64}$/.test(sha)) {
-      alert("Nema aktivnog 64-znakovnog SHA-256 zapisa (učitajte podnesak u točki 1 ili zapis u točki 2).");
-      return;
-    }
-    const qrUrl = `${PORTAL_BASE}?sha256=${sha}`;
-    const canvas = napraviQrCanvas(qrUrl, 256);
-    zadnjiQrDataUrl = canvas.toDataURL("image/png");
-    zadnjiQrNaziv = `QR_${sha.slice(0, 12)}.png`;
-    let box = document.getElementById("ruke-qr-izlaz-box");
-    if (!box) {
-      box = document.createElement("div");
-      box.id = "ruke-qr-izlaz-box";
-      box.style.marginTop = "10px";
-      const sec3 = Array.from(document.querySelectorAll("section, div, article")).find((el) =>
-        (el.innerText || "").includes("3) Generiranje QR koda na Podnesak")
-      );
-      (sec3 || document.body).appendChild(box);
-    }
-    box.innerHTML =
-      `<div><b>QR URI:</b> <a href="${qrUrl}" target="_blank" rel="noopener">${qrUrl}</a></div>` +
-      `<div style="margin-top:8px"><img src="${zadnjiQrDataUrl}" alt="QR kod" width="180" height="180" style="border:1px solid #ccc;padding:4px;background:#fff"></div>`;
-  }
-
-  function handlePreuzmiQr() {
-    if (!zadnjiQrDataUrl) handleGenerirajQr();
-    if (!zadnjiQrDataUrl) return;
-    const a = document.createElement("a");
-    a.href = zadnjiQrDataUrl;
-    a.download = zadnjiQrNaziv;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    return { ok: false, error: "PDF nije pronađen u QES-PDF bucketu za traženi SHA-256." };
   }
 
   document.addEventListener("click", async function (ev) {
     const t = ev.target ? ev.target.closest("button, a, input[type=button], input[type=submit]") : null;
     if (!t) return;
     const lbl = ((t.innerText || t.value || t.textContent || "")).trim().toLowerCase();
-    if (lbl.includes("preuzmi izvornik")) {
-      ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
-      await handlePreuzmiIzvornik();
-    } else if (lbl.includes("generiraj qr")) {
-      ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
-      handleGenerirajQr();
-    } else if (lbl.includes("preuzmi qr")) {
-      ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
-      handlePreuzmiQr();
+    if (!lbl.includes("preuzmi izvornik")) return;
+    ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
+    const sha = nadjiSha();
+    if (!/^[0-9a-f]{64}$/.test(sha)) {
+      alert("Unesite ili odaberite valjani 64-znakovni SHA-256 zapis.");
+      return;
     }
+    const res = await dohvatiIProvjeriPdf(sha);
+    if (!res.ok) {
+      alert(res.error);
+      return;
+    }
+    const blob = new Blob([res.buf], { type: "application/pdf" });
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = res.fname;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 15000);
   }, true);
 })();
 </script>
