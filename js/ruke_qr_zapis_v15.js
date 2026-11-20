@@ -245,51 +245,129 @@
 
   function kreirajPdfZapis(qr, sha, qrUri, nazivPodneska) {
     const p12 = sha.slice(0, 12).toUpperCase();
+    const p12Low = sha.slice(0, 12).toLowerCase();
     const kod = `[${sha.slice(0, 4)}-${sha.slice(4, 8)}]`.toUpperCase();
     const brojZapisa = `RUKE-${p12}`;
-    const quiet = 3;
+    const vrijeme = new Date().toISOString();
+    const podnesak = nazivPodneska || `${p12Low}_podnesak.pdf`;
+    const supaUrl = `https://ydeswffyfomboflcvnfm.supabase.co/storage/v1/object/public/QES-PDF/${p12Low}_podnesak.pdf`;
+
+    const c = document.createElement("canvas");
+    const W = 1240, H = 1754;
+    c.width = W; c.height = H;
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = "#111111";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(56, 56, W - 112, H - 112);
+
+    ctx.fillStyle = "#111111";
+    ctx.font = "bold 30px sans-serif";
+    ctx.fillText("ZAJEDNICA RUKE - e-SPIS (OIB: 64517735227)", 92, 125);
+    ctx.font = "bold 24px sans-serif";
+    ctx.fillText("POTVRDA I QR ZAPIS PODNESKA", 92, 168);
+
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(92, 190); ctx.lineTo(W - 92, 190); ctx.stroke();
+
+    ctx.font = "bold 26px monospace";
+    ctx.fillText(`Kontrolni broj: ${kod}`, 92, 240);
+    ctx.fillText(`Broj zapisa:    ${brojZapisa}`, 92, 282);
+
+    ctx.font = "21px sans-serif";
+    ctx.fillText(`Podnesak: ${podnesak}`, 92, 340);
+    ctx.fillText(`Vrijeme (UTC): ${vrijeme}`, 92, 378);
+
+    ctx.font = "bold 20px sans-serif";
+    ctx.fillText("SHA-256 izvornika:", 92, 434);
+    ctx.font = "19px monospace";
+    ctx.fillText(sha, 92, 464);
+
+    ctx.font = "bold 20px sans-serif";
+    ctx.fillText("QR URI (provjera i dohvat):", 92, 516);
+    ctx.font = "18px monospace";
+    ctx.fillText(qrUri, 92, 546);
+
+    ctx.font = "bold 20px sans-serif";
+    ctx.fillText("Izravni Supabase QES-PDF URL:", 92, 598);
+    ctx.font = "17px monospace";
+    ctx.fillText(supaUrl, 92, 628);
+
+    ctx.font = "19px sans-serif";
+    ctx.fillText("Status izvornika: BAJTNO NETAKNUT (ocuvan QES i SHA-256 izvornika).", 92, 688);
+    ctx.fillText("Razdvajanje slojeva: QES OSOBE odvojeno od AUTOMATSKOG QR ZAPISA INSTITUCIJE.", 92, 722);
+
+    const quiet = 4;
     const total = qr.size + quiet * 2;
-    const boxPt = 148;
-    const cell = boxPt / total;
-    const x0 = 408, y0 = 626;
-
-    let gfx = "q 1 1 1 rg 0 0 595 842 re f\n";
-    gfx += "BT /F1 12 Tf 48 790 Td (ZAJEDNICA RUKE - e-SPIS QR ZAPIS PODNESKA) Tj ET\n";
-    gfx += `BT /F1 11 Tf 48 766 Td (Kontrolni broj: ${pdfSafe(kod)}) Tj ET\n`;
-    gfx += `BT /F1 11 Tf 48 748 Td (Broj zapisa: ${pdfSafe(brojZapisa)}) Tj ET\n`;
-    gfx += `BT /F1 8.5 Tf 48 728 Td (Podnesak: ${pdfSafe(nazivPodneska || `${sha.slice(0, 12)}_podnesak.pdf`)}) Tj ET\n`;
-    gfx += `BT /F1 8 Tf 48 712 Td (SHA-256 izvornika: ${pdfSafe(sha)}) Tj ET\n`;
-    gfx += `BT /F1 8 Tf 48 696 Td (QR URI: ${pdfSafe(qrUri)}) Tj ET\n`;
-    gfx += "BT /F1 8 Tf 48 678 Td (Napomena: Izvorni PDF podnesak ostaje bajtno netaknut u QES-PDF bucketu.) Tj ET\n";
-
-    gfx += `q 1 0 0 1 ${x0} ${y0} cm 1 1 1 rg 0 0 ${boxPt} ${boxPt} re f 0 0 0 rg `;
+    const qrBox = 420;
+    const mod = Math.floor(qrBox / total);
+    const drawSize = mod * total;
+    const qx = 92, qy = 780;
+    ctx.strokeRect(qx - 8, qy - 8, drawSize + 16, drawSize + 16);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(qx, qy, drawSize, drawSize);
+    ctx.fillStyle = "#000000";
     for (let r = 0; r < qr.size; r++) {
-      for (let c = 0; c < qr.size; c++) {
-        if (qr.mat[r][c] === 1) {
-          const rx = ((c + quiet) * cell).toFixed(2);
-          const ry = ((total - 1 - (r + quiet)) * cell).toFixed(2);
-          const rw = (cell + 0.05).toFixed(2);
-          gfx += `${rx} ${ry} ${rw} ${rw} re f `;
+      for (let col = 0; col < qr.size; col++) {
+        if (qr.mat[r][col] === 1) {
+          ctx.fillRect(qx + (col + quiet) * mod, qy + (r + quiet) * mod, mod, mod);
         }
       }
     }
-    gfx += "Q\n";
+    ctx.font = "bold 22px monospace";
+    ctx.fillText(`Kontrolni broj: ${kod}`, qx + drawSize + 36, qy + 60);
+    ctx.fillText(`Broj zapisa: ${brojZapisa}`, qx + drawSize + 36, qy + 102);
+    ctx.font = "19px sans-serif";
+    ctx.fillText("Skenirajte QR kod za provjeru", qx + drawSize + 36, qy + 156);
+    ctx.fillText("i preuzimanje netaknutog izvornika.", qx + drawSize + 36, qy + 186);
 
-    const objs = [
-      "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n",
-      "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n",
-      "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj\n",
-      "4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj\n",
-      `5 0 obj << /Length ${gfx.length} >> stream\n${gfx}endstream endobj\n`
-    ];
-    let out = "%PDF-1.4\n";
-    const off = [0];
-    for (const o of objs) { off.push(out.length); out += o; }
-    const xref = out.length;
-    out += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`;
-    for (let i = 1; i < off.length; i++) out += String(off[i]).padStart(10, "0") + ` 00000 n \n`;
-    out += `trailer << /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
-    return new Blob([out], { type: "application/pdf" });
+    const dataUrl = c.toDataURL("image/jpeg", 0.92);
+    const b64 = dataUrl.split(",")[1];
+    const binStr = atob(b64);
+    const jpgBytes = new Uint8Array(binStr.length);
+    for (let i = 0; i < binStr.length; i++) jpgBytes[i] = binStr.charCodeAt(i);
+
+    const enc = new TextEncoder();
+    const textLayer = [
+      "BT /F1 1 Tf 50 40 Td 3 Tr",
+      `(ZAJEDNICA RUKE - e-SPIS OIB: 64517735227) Tj 0 -10 Td`,
+      `(Kontrolni broj: ${pdfSafe(kod)} | Broj zapisa: ${pdfSafe(brojZapisa)}) Tj 0 -10 Td`,
+      `(Podnesak: ${pdfSafe(podnesak)}) Tj 0 -10 Td`,
+      `(SHA-256: ${pdfSafe(sha)}) Tj 0 -10 Td`,
+      `(QR URI: ${pdfSafe(qrUri)}) Tj ET\n`
+    ].join("\n");
+    const contentStr = `q 595 0 0 842 0 0 cm /Im1 Do Q\n${textLayer}`;
+
+    const parts = [];
+    const offsets = [0];
+    let pos = 0;
+    const pushStr = (s) => { const u = enc.encode(s); parts.push(u); pos += u.length; };
+    const pushBytes = (u) => { parts.push(u); pos += u.length; };
+
+    pushStr("%PDF-1.4\n");
+    offsets.push(pos);
+    pushStr("1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n");
+    offsets.push(pos);
+    pushStr("2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n");
+    offsets.push(pos);
+    pushStr("3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> /XObject << /Im1 5 0 R >> >> /Contents 6 0 R >> endobj\n");
+    offsets.push(pos);
+    pushStr("4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >> endobj\n");
+    offsets.push(pos);
+    pushStr(`5 0 obj << /Type /XObject /Subtype /Image /Width ${W} /Height ${H} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpgBytes.length} >> stream\n`);
+    pushBytes(jpgBytes);
+    pushStr("\nendstream endobj\n");
+    offsets.push(pos);
+    pushStr(`6 0 obj << /Length ${contentStr.length} >> stream\n${contentStr}endstream endobj\n`);
+
+    const xrefPos = pos;
+    pushStr(`xref\n0 ${offsets.length}\n0000000000 65535 f \n`);
+    for (let i = 1; i < offsets.length; i++) {
+      pushStr(String(offsets[i]).padStart(10, "0") + " 00000 n \n");
+    }
+    pushStr(`trailer << /Size ${offsets.length} /Root 1 0 R >>\nstartxref\n${xrefPos}\n%%EOF\n`);
+    return new Blob(parts, { type: "application/pdf" });
   }
 
   window.RukeQrZapis = {
