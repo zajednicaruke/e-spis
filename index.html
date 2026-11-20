@@ -497,5 +497,75 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
   });
 }
 </script>
+<div id="ruke-qr-dohvat-panel" style="margin-top:16px;padding:12px;border:1px solid #d0d7de;border-radius:8px;display:none">
+  <div id="ruke-qr-status">Provjera SHA-256 upita...</div>
+  <div id="ruke-qr-meta" style="margin-top:8px;font-size:0.95rem"></div>
+  <div id="ruke-qr-akcija" style="margin-top:10px"></div>
+</div>
+<script>
+(async function () {
+  const SUPA_URL = "https://ydeswffyfomboflcvnfm.supabase.co";
+  const SUPA_ANON_KEY = "sb_publishable_F-F5ztxJOK9VlyBgQHEW-A_-G6G7l2r";
+  const BUCKET = "QES-PDF";
+  const TABLICA = "espis_registar";
+  const params = new URLSearchParams(window.location.search);
+  const rawSha = (params.get("sha256") || "").trim().toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(rawSha)) return;
+  const panel = document.getElementById("ruke-qr-dohvat-panel");
+  const statusEl = document.getElementById("ruke-qr-status");
+  const metaEl = document.getElementById("ruke-qr-meta");
+  const akcijaEl = document.getElementById("ruke-qr-akcija");
+  if (!panel || !statusEl || !metaEl || !akcijaEl) return;
+  panel.style.display = "block";
+  const kod = `[${rawSha.slice(0, 4)}-${rawSha.slice(4, 8)}]`.toUpperCase();
+  statusEl.textContent = `Tražim podnesak ${kod} (SHA-256: ${rawSha})...`;
+  async function sha256Hex(arrayBuffer) {
+    const hashBuf = await crypto.subtle.digest("SHA-256", arrayBuffer);
+    return Array.from(new Uint8Array(hashBuf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+  try {
+    let regUrl = `${SUPA_URL}/rest/v1/${TABLICA}?sha256_cjeloviti=eq.${rawSha}&select=*`;
+    let res = await fetch(regUrl, { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } });
+    if (!res.ok) {
+      regUrl = `${SUPA_URL}/rest/v1/${TABLICA}?sha256=eq.${rawSha}&select=*`;
+      res = await fetch(regUrl, { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } });
+    }
+    if (!res.ok) throw new Error(`HTTP ${res.status} pri upitu na ${TABLICA}`);
+    const rows = await res.json();
+    if (!Array.isArray(rows) || rows.length === 0) {
+      statusEl.textContent = `[!] Zapis za SHA-256 ${rawSha} nije pronađen u tablici ${TABLICA}.`;
+      return;
+    }
+    const rec = rows[0];
+    const qesOsobe = rec.qes_osobe ?? "NE / NEMA QES OSOBE";
+    const zapisInst = rec.zapis_institucije ?? rec.automatski_qr ?? "NE";
+    const nazivPdf = rec.naziv_datoteke || `${rawSha.slice(0, 12)}_podnesak.pdf`;
+    const objPath = rec.storage_putanja || rec.storage_path || `${rawSha}.pdf`;
+    metaEl.innerHTML =
+      `<div><b>Kontrolni kod:</b> ${kod}</div>` +
+      `<div><b>KLASA / URBROJ:</b> ${rec.klasa || "-"} / ${rec.urbroj || "-"}</div>` +
+      `<div><b>QES osobe:</b> ${qesOsobe}</div>` +
+      `<div><b>Automatski QR / zapis institucije:</b> ${zapisInst}</div>`;
+    const pdfUrl = `${SUPA_URL}/storage/v1/object/public/${BUCKET}/${encodeURIComponent(objPath)}`;
+    const pdfRes = await fetch(pdfUrl);
+    if (!pdfRes.ok) {
+      statusEl.textContent = `[!] Metapodaci nađeni, ali PDF nije dostupan u bucketu ${BUCKET} (HTTP ${pdfRes.status}).`;
+      return;
+    }
+    const buf = await pdfRes.arrayBuffer();
+    const stvarniSha = await sha256Hex(buf);
+    if (stvarniSha !== rawSha) {
+      statusEl.textContent = `[XX] UPOZORENJE: SHA-256 preuzete datoteke (${stvarniSha}) ne odgovara QR sažetku (${rawSha}).`;
+      return;
+    }
+    const blob = new Blob([buf], { type: "application/pdf" });
+    const blobUrl = URL.createObjectURL(blob);
+    statusEl.textContent = `[OK] Izvornik potvrđen (SHA-256 podudaran) za ${kod}.`;
+    akcijaEl.innerHTML = `<a href="${blobUrl}" download="${nazivPdf}">Preuzmi izvorni PDF (${nazivPdf})</a>`;
+  } catch (err) {
+    statusEl.textContent = `[XX] Dohvat preko Supabasea nije uspio: ${err.message || err}`;
+  }
+})();
+</script>
 </body>
 </html>
