@@ -244,22 +244,27 @@
   }
 
   function kreirajPdfZapis(qr, sha, qrUri, nazivPodneska) {
+    const p8 = sha.slice(0, 8).toUpperCase();
     const p12 = sha.slice(0, 12).toUpperCase();
     const kod = `[${sha.slice(0, 4)}-${sha.slice(4, 8)}]`.toUpperCase();
     const brojZapisa = `RUKE-${p12}`;
+    const pngIme = `QR_${p8}.png`;
+    const pdfIme = `Zapis_QR_${p8}.pdf`;
     const quiet = 3;
     const total = qr.size + quiet * 2;
     const boxPt = 140;
     const cell = boxPt / total;
-    const x0 = 415, y0 = 640;
+    const x0 = 415, y0 = 635;
 
     let gfx = "q 1 1 1 rg 0 0 595 842 re f\n";
     gfx += "BT /F1 12 Tf 48 790 Td (ZAJEDNICA RUKE - e-SPIS QR ZAPIS PODNESKA) Tj ET\n";
     gfx += `BT /F1 10 Tf 48 770 Td (Broj zapisa: ${pdfSafe(brojZapisa)} | Kontrolni broj: ${pdfSafe(kod)}) Tj ET\n`;
-    gfx += `BT /F1 9 Tf 48 752 Td (Podnesak: ${pdfSafe(nazivPodneska || `${sha.slice(0,12)}_podnesak.pdf`)}) Tj ET\n`;
-    gfx += `BT /F1 8 Tf 48 736 Td (SHA-256 izvornika: ${pdfSafe(sha)}) Tj ET\n`;
-    gfx += `BT /F1 8 Tf 48 720 Td (QR URI: ${pdfSafe(qrUri)}) Tj ET\n`;
-    gfx += "BT /F1 8 Tf 48 704 Td (Napomena: Izvorni PDF podnesak ostaje bajtno netaknut u registru i QES-PDF bucketu.) Tj ET\n";
+    gfx += `BT /F1 8 Tf 48 752 Td (QR URI: ${pdfSafe(qrUri)}) Tj ET\n`;
+    gfx += "BT /F1 9 Tf 48 734 Td (QR kod) Tj ET\n";
+    gfx += `BT /F1 8 Tf 48 718 Td (1. QR kod kao PNG (${pdfSafe(pngIme)})) Tj ET\n`;
+    gfx += `BT /F1 8 Tf 48 704 Td (2. PDF s QR kodom, brojem zapisa i kontrolnim brojem (${pdfSafe(pdfIme)})) Tj ET\n`;
+    gfx += `BT /F1 8 Tf 48 686 Td (Podnesak: ${pdfSafe(nazivPodneska || `${sha.slice(0,12)}_podnesak.pdf`)}) Tj ET\n`;
+    gfx += "BT /F1 8 Tf 48 670 Td (Napomena: Izvorni PDF podnesak ostaje bajtno netaknut u registru i QES-PDF bucketu.) Tj ET\n";
 
     gfx += `q 1 0 0 1 ${x0} ${y0} cm 1 1 1 rg 0 0 ${boxPt} ${boxPt} re f 0 0 0 rg `;
     for (let r = 0; r < qr.size; r++) {

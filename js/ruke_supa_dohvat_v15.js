@@ -27,6 +27,32 @@
     return "";
   }
 
+  function osigurajPdfTipku(btnPng) {
+    let btnPdf = document.getElementById("btn-qr-pdf-dl");
+    if (!btnPdf) {
+      btnPdf = document.createElement("button");
+      btnPdf.type = "button";
+      btnPdf.id = "btn-qr-pdf-dl";
+      btnPdf.textContent = "Preuzmi QR (.PDF)";
+      btnPdf.disabled = true;
+      if (btnPng && btnPng.parentElement) {
+        btnPng.insertAdjacentElement("afterend", btnPdf);
+      }
+    }
+    return btnPdf;
+  }
+
+  window.preuzmiQrPdfPodneska = function () {
+    if (!zadnjiArtefakt || !zadnjiPdfUrl) window.generirajQrNaPodnesak();
+    if (!zadnjiArtefakt || !zadnjiPdfUrl) return;
+    const a = document.createElement("a");
+    a.href = zadnjiPdfUrl;
+    a.download = zadnjiArtefakt.pdfIme;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
   window.generirajQrNaPodnesak = function () {
     const sha = aktivniSha();
     if (!/^[0-9a-f]{64}$/.test(sha)) {
@@ -40,6 +66,8 @@
 
     const btnDl = document.getElementById("btn-qr-dl");
     if (btnDl) btnDl.disabled = false;
+    const btnPdf = osigurajPdfTipku(btnDl);
+    if (btnPdf) btnPdf.disabled = !zadnjiPdfUrl;
 
     let wrap = document.getElementById("ruke-qr-v15-box");
     if (!wrap) {
@@ -47,16 +75,17 @@
       wrap.id = "ruke-qr-v15-box";
       wrap.style.marginTop = "10px"; wrap.style.padding = "10px";
       wrap.style.border = "1px solid #777"; wrap.style.background = "#fff"; wrap.style.color = "#111";
-      const anchor = btnDl ? btnDl.parentElement : document.body;
+      const anchor = (btnPdf && btnPdf.parentElement) ? btnPdf.parentElement : (btnDl ? btnDl.parentElement : document.body);
       anchor.appendChild(wrap);
     }
     wrap.innerHTML =
       `<div><b>Broj zapisa:</b> ${zadnjiArtefakt.brojZapisa} | <b>Kontrolni broj:</b> ${zadnjiArtefakt.kod}</div>` +
       `<div style="margin-top:4px"><b>QR URI:</b> <a href="${zadnjiArtefakt.qrUri}" target="_blank" rel="noopener">${zadnjiArtefakt.qrUri}</a></div>` +
-      `<div style="margin-top:8px"><img src="${zadnjiArtefakt.pngDataUrl}" alt="QR kod" width="190" height="190" style="border:1px solid #ccc;padding:4px;background:#fff"></div>` +
+      `<div style="margin-top:6px"><b>QR kod</b></div>` +
+      `<div style="margin-top:6px"><img src="${zadnjiArtefakt.pngDataUrl}" alt="QR kod" width="190" height="190" style="border:1px solid #ccc;padding:4px;background:#fff"></div>` +
       `<div style="margin-top:8px">` +
-      `<a href="${zadnjiArtefakt.pngDataUrl}" download="${zadnjiArtefakt.pngIme}" style="margin-right:14px">1. QR kod kao PNG (${zadnjiArtefakt.pngIme})</a>` +
-      (zadnjiPdfUrl ? `<a href="${zadnjiPdfUrl}" download="${zadnjiArtefakt.pdfIme}">2. PDF s QR kodom, brojem zapisa i kontrolnim brojem (${zadnjiArtefakt.pdfIme})</a>` : "") +
+      `<div>1. QR kod kao PNG (${zadnjiArtefakt.pngIme})</div>` +
+      `<div>2. PDF s QR kodom, brojem zapisa i kontrolnim brojem (${zadnjiArtefakt.pdfIme})</div>` +
       `</div>`;
   };
 
@@ -101,6 +130,9 @@
     if (lbl.includes("generiraj qr")) {
       ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
       window.generirajQrNaPodnesak();
+    } else if (lbl.includes("preuzmi qr (.pdf)") || lbl.includes("preuzmi qr pdf")) {
+      ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
+      window.preuzmiQrPdfPodneska();
     } else if (lbl.includes("preuzmi qr")) {
       ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
       window.preuzmiQrPodneska();
@@ -118,7 +150,10 @@
     }
   }, true);
 
-  window.addEventListener("DOMContentLoaded", async function () {
+ 
+window.addEventListener("DOMContentLoaded", async function () {
+    const btnDl = document.getElementById("btn-qr-dl");
+    osigurajPdfTipku(btnDl);
     const sha = aktivniSha();
     if (/^[0-9a-f]{64}$/.test(sha)) {
       window.generirajQrNaPodnesak();
