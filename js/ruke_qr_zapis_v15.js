@@ -287,7 +287,7 @@
     for (const o of objs) { off.push(out.length); out += o; }
     const xref = out.length;
     out += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`;
-    for (let i = 1; i < off.length; i++) out += String(off[i]).padStart(10, "0") + " 00000 n \n`;
+    for (let i = 1; i < off.length; i++) out += String(off[i]).padStart(10, "0") + ` 00000 n \n`;
     out += `trailer << /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
     return new Blob([out], { type: "application/pdf" });
   }
