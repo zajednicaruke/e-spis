@@ -556,5 +556,70 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
 })();
 </script>
 
+<script id="ruke-preuzmi-izvornik-fix">
+(function () {
+  const SUPA_QES_BASE = "https://ydeswffyfomboflcvnfm.supabase.co/storage/v1/object/public/QES-PDF";
+  const MAPA_SHA = {
+    "2320acf57020219c061ac13318a6359a46afdde7bcc42c0cb47a43798cd167dc": "2320acf57020_Zahtjev_CIP_ISBN_Zajednica_RUKE.pdf",
+    "39d4227b5a03fa50e043028b1bac9d384cf4afcc729a728842d643125fabb1a9": "39d4227b5a03_Studija_Skandal_TIGRA_od_PAPIRA-v2.pdf",
+    "0f4e42f58b7591038cc6b1bfa25dc69230780da8d3061f6b8b764461c7ee3971": "0f4e42f58b75_Studija_Skandal_TIGRA_od_PAPIRA.pdf"
+  };
+  function nadjiAkt() {
+    const q = new URLSearchParams(window.location.search);
+    let sha = (q.get("sha256") || "").trim().toLowerCase();
+    for (const el of document.querySelectorAll("input, textarea, select")) {
+      const m = ((el.value || "").trim().toLowerCase()).match(/[0-9a-f]{64}/);
+      if (m) { sha = m[0]; break; }
+    }
+    if (!sha && document.body) {
+      const m2 = document.body.innerText.toLowerCase().match(/[0-9a-f]{64}/);
+      if (m2) sha = m2[0];
+    }
+    if (sha && MAPA_SHA[sha]) return { sha, obj: MAPA_SHA[sha], naziv: MAPA_SHA[sha] };
+    if (sha && /^[0-9a-f]{64}$/.test(sha)) return { sha, obj: `${sha.slice(0,12)}_podnesak.pdf`, naziv: `${sha.slice(0,12)}_podnesak.pdf` };
+    return { sha: "", obj: "39d4227b5a03_Studija_Skandal_TIGRA_od_PAPIRA-v2.pdf", naziv: "39d4227b5a03_Studija_Skandal_TIGRA_od_PAPIRA-v2.pdf" };
+  }
+  async function sha256Hex(buf) {
+    const d = await crypto.subtle.digest("SHA-256", buf);
+    return Array.from(new Uint8Array(d)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+  async function preuzmiIzvornikPdf(ev) {
+    const target = ev.target ? ev.target.closest("button, a, input[type=button], input[type=submit]") : null;
+    if (!target) return;
+    const label = ((target.innerText || target.value || target.textContent || "")).trim().toLowerCase();
+    if (!label.includes("preuzmi izvornik")) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    ev.stopImmediatePropagation();
+    const akt = nadjiAkt();
+    const url = `${SUPA_QES_BASE}/${encodeURIComponent(akt.obj)}`;
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) { window.open(url, "_blank", "noopener"); return; }
+      const buf = await res.arrayBuffer();
+      if (akt.sha) {
+        const calc = await sha256Hex(buf);
+        if (calc !== akt.sha) {
+          alert(`UPOZORENJE: SHA-256 preuzete datoteke (${calc}) ne odgovara zapisu (${akt.sha}).`);
+          return;
+        }
+      }
+      const blob = new Blob([buf], { type: "application/pdf" });
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = akt.naziv;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 15000);
+    } catch (_) {
+      window.open(url, "_blank", "noopener");
+    }
+  }
+  document.addEventListener("click", preuzmiIzvornikPdf, true);
+})();
+</script>
+
 </body>
 </html>
