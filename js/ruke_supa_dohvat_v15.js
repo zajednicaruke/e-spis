@@ -238,16 +238,92 @@
     }
   }, true);
 
+
+  function osigurajKontekstTraku() {
+    let bar = document.getElementById("ruke-aktivni-kontekst");
+    if (bar) return bar;
+    bar = document.createElement("div");
+    bar.id = "ruke-aktivni-kontekst";
+    for (const h of document.querySelectorAll("h1,h2,h3,h4,div,section")) {
+      const tx = (h.innerText || h.textContent || "");
+      if (tx.includes("1) Ucitavanje Podneska") || tx.includes("1) Učitavanje Podneska")) {
+        const host = h.closest("section, article, div") || h;
+        if (host && host.parentElement) {
+          host.parentElement.insertBefore(bar, host);
+          return bar;
+        }
+      }
+    }
+    document.body.insertBefore(bar, document.body.firstChild);
+    return bar;
+  }
+
+  function osvjeziKontekstTraku(statusIzvornika) {
+    const bar = osigurajKontekstTraku();
+    const sha = aktivniSha();
+    const kod = sha ? `[${sha.slice(0, 4)}-${sha.slice(4, 8)}]`.toUpperCase() : "—";
+    const broj = sha ? `RUKE-${sha.slice(0, 12).toUpperCase()}` : "—";
+    const shaPrikaz = sha ? `${sha.slice(0, 16)}…${sha.slice(-8)}` : "Nije aktivan";
+    const st = statusIzvornika || (sha ? "Spremno za SHA-256 / QES-PDF provjeru" : "Odaberite stavku na Oglasnoj ploči ili učitajte podnesak");
+    bar.innerHTML =
+      `<b>Kontekst podneska:</b> Kontrolni: <code>${kod}</code> | Broj zapisa: <code>${broj}</code><br>` +
+      `<b>SHA-256:</b> <code>${shaPrikaz}</code> | <b>Status:</b> ${st}`;
+
+    const btnVal = document.getElementById("ruke-validiraj-ucitani-btn");
+    if (btnVal) btnVal.disabled = !sha;
+  }
+
+  function posloziKompaktneTipke() {
+    const btnGen = document.getElementById("btn-qr-gen");
+    const btnPng = document.getElementById("btn-qr-dl");
+    const btnPdf = osigurajPdfTipku(btnPng);
+    const first = btnGen || btnPng || btnPdf;
+    if (first && first.parentElement && !first.parentElement.classList.contains("ruke-qr-btn-red")) {
+      const row = document.createElement("div");
+      row.className = "ruke-qr-btn-red";
+      first.parentElement.insertBefore(row, first);
+      if (btnGen) row.appendChild(btnGen);
+      if (btnPng) row.appendChild(btnPng);
+      if (btnPdf) row.appendChild(btnPdf);
+    }
+
+    if (!document.getElementById("ruke-validiraj-ucitani-btn")) {
+      for (const el of document.querySelectorAll("h2,h3,h4,label,div")) {
+        const tx = (el.innerText || el.textContent || "").trim().toLowerCase();
+        if (tx.includes("4) dss validacija") || tx.includes("dss validacija")) {
+          const box = el.closest("section, article, div") || el.parentElement;
+          if (box && !box.querySelector("#ruke-validiraj-ucitani-btn")) {
+            const b = document.createElement("button");
+            b.type = "button";
+            b.id = "ruke-validiraj-ucitani-btn";
+            b.textContent = "Validiraj učitani podnesak";
+            b.disabled = !aktivniSha();
+            b.addEventListener("click", function () {
+              const s = aktivniSha();
+              if (!s) return;
+              osvjeziKontekstTraku(`DSS/SHA-256 kontekst potvrđen (${s.slice(0, 12)}…)`);
+            });
+            box.appendChild(b);
+            break;
+          }
+        }
+      }
+    }
+  }
+
   window.addEventListener("DOMContentLoaded", async function () {
-    const btnDl = document.getElementById("btn-qr-dl");
-    osigurajPdfTipku(btnDl);
+    posloziKompaktneTipke();
+    osvjeziKontekstTraku("");
     await inicijalizirajOglasnuPlocu();
+    osvjeziKontekstTraku("");
 
     const sha = aktivniSha();
     if (/^[0-9a-f]{64}$/.test(sha)) {
       window.generirajQrNaPodnesak();
+      osvjeziKontekstTraku("Provjera netaknutog izvornika u QES-PDF...");
       const res = await preuzmiIzSupabase(sha);
       if (res) {
+        osvjeziKontekstTraku(`Netaknuti izvornik spreman: ${res.fname}`);
         let dlBox = document.getElementById("ruke-qr-izravno-pdf");
         if (!dlBox) {
           dlBox = document.createElement("div");
@@ -257,6 +333,8 @@
           document.body.appendChild(dlBox);
         }
         dlBox.innerHTML = `<b>Netaknuti izvornik spreman za preuzimanje:</b> <a href="${res.blobUrl}" download="${res.fname}">${res.fname}</a>`;
+      } else {
+        osvjeziKontekstTraku("Izvornik nije pronađen u QES-PDF bucketu");
       }
     }
   });

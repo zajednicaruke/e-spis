@@ -143,6 +143,7 @@ canvas#qr-canvas {
 }
 .hidden { display: none; }
 </style>
+<style id="ruke-ux-v16-style">#ruke-aktivni-kontekst{margin:10px 0;padding:8px 10px;border:1px solid #4a5568;border-radius:6px;font-size:0.9rem;line-height:1.4}.ruke-qr-btn-red{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}#ruke-validiraj-ucitani-btn{margin-top:8px}</style>
 </head>
 <body>
 <div class="wrap">
@@ -194,7 +195,7 @@ canvas#qr-canvas {
       <!-- 2) Dohvacanje izvornika akta na temelju kontrolnog zapisa i broja zapisa -->
       <section class="card">
         <h3>2) Dohvacanje izvornika akta</h3>
-        <p class="muted">Unesite kontrolni zapis (npr. A89D-2055) i broj zapisa (npr. 6451-26-06-33-2) ili odaberite akt iz registra.</p>
+        <p class="muted">Odaberite akt s Oglasne ploče ili unesite kontrolni zapis i broj zapisa / URBROJ.</p>
         <div class="field-row">
           <input id="ctrl-zapis" class="inp" type="text" placeholder="Kontrolni zapis (npr. 1414-532D)">
           <input id="broj-zapisa" class="inp" type="text" placeholder="Broj zapisa / URBROJ">
@@ -209,7 +210,7 @@ canvas#qr-canvas {
           </select>
           <button class="btn-action btn-blue" type="button" onclick="dohvatiIzvornikAkta()">Dohvati izvornik</button>
         </div>
-        <div id="out-izvornik" class="mono-box">Unesite kontrolni zapis i broj zapisa za dohvat izvornika.</div>
+        <div id="out-izvornik" class="mono-box"></div>
         <div class="field-row">
           <a id="link-izvornik" class="btn-action btn-green hidden" href="#" download>Preuzmi izvornik akta</a>
         </div>
@@ -238,7 +239,7 @@ canvas#qr-canvas {
           <div class="muted">Provjera zaglavlja, velicine i FIPS 180-4 SHA-256</div>
           <input id="in-dss" type="file" class="hidden" onchange="pokreniDssValidaciju(this.files[0])">
         </div>
-        <div id="out-dss" class="mono-box">Nije pokrenuta DSS validacija.</div>
+        <div id="out-dss" class="mono-box"></div>
       </section>
     </div>
   </div>
