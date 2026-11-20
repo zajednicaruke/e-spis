@@ -263,47 +263,47 @@
     ctx.strokeRect(56, 56, W - 112, H - 112);
 
     ctx.fillStyle = "#111111";
-    ctx.font = "bold 30px sans-serif";
-    ctx.fillText("ZAJEDNICA RUKE - e-SPIS (OIB: 64517735227)", 92, 125);
-    ctx.font = "bold 24px sans-serif";
-    ctx.fillText("POTVRDA I QR ZAPIS PODNESKA", 92, 168);
+    ctx.font = "bold 28px sans-serif";
+    ctx.fillText("ZAJEDNICA RUKE - e-SPIS (OIB: 64517735227)", 92, 122);
+    ctx.font = "bold 22px sans-serif";
+    ctx.fillText("POTVRDA I QR ZAPIS PODNESKA", 92, 162);
 
     ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(92, 190); ctx.lineTo(W - 92, 190); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(92, 184); ctx.lineTo(W - 92, 184); ctx.stroke();
 
-    ctx.font = "bold 26px monospace";
-    ctx.fillText(`Kontrolni broj: ${kod}`, 92, 240);
-    ctx.fillText(`Broj zapisa:    ${brojZapisa}`, 92, 282);
+    ctx.font = "bold 24px monospace";
+    ctx.fillText(`Kontrolni broj: ${kod}`, 92, 232);
+    ctx.fillText(`Broj zapisa:   ${brojZapisa}`, 92, 272);
 
-    ctx.font = "21px sans-serif";
-    ctx.fillText(`Podnesak: ${podnesak}`, 92, 340);
-    ctx.fillText(`Vrijeme (UTC): ${vrijeme}`, 92, 378);
+    ctx.font = "20px sans-serif";
+    ctx.fillText(`Podnesak: ${podnesak}`, 92, 326);
+    ctx.fillText(`Vrijeme (UTC): ${vrijeme}`, 92, 362);
 
-    ctx.font = "bold 20px sans-serif";
-    ctx.fillText("SHA-256 izvornika:", 92, 434);
-    ctx.font = "19px monospace";
-    ctx.fillText(sha, 92, 464);
-
-    ctx.font = "bold 20px sans-serif";
-    ctx.fillText("QR URI (provjera i dohvat):", 92, 516);
+    ctx.font = "bold 19px sans-serif";
+    ctx.fillText("SHA-256 izvornika:", 92, 414);
     ctx.font = "18px monospace";
-    ctx.fillText(qrUri, 92, 546);
+    ctx.fillText(sha, 92, 442);
 
-    ctx.font = "bold 20px sans-serif";
-    ctx.fillText("Izravni Supabase QES-PDF URL:", 92, 598);
-    ctx.font = "17px monospace";
-    ctx.fillText(supaUrl, 92, 628);
+    ctx.font = "bold 19px sans-serif";
+    ctx.fillText("QR URI (provjera i dohvat):", 92, 492);
+    ctx.font = "13.5px monospace";
+    ctx.fillText(qrUri, 92, 520);
 
-    ctx.font = "19px sans-serif";
-    ctx.fillText("Status izvornika: BAJTNO NETAKNUT (ocuvan QES i SHA-256 izvornika).", 92, 688);
-    ctx.fillText("Razdvajanje slojeva: QES OSOBE odvojeno od AUTOMATSKOG QR ZAPISA INSTITUCIJE.", 92, 722);
+    ctx.font = "bold 19px sans-serif";
+    ctx.fillText("Izravni Supabase QES-PDF URL:", 92, 568);
+    ctx.font = "13px monospace";
+    ctx.fillText(supaUrl, 92, 596);
+
+    ctx.font = "18px sans-serif";
+    ctx.fillText("Status izvornika: BAJTNO NETAKNUT (ocuvan QES i SHA-256 izvornika).", 92, 652);
+    ctx.fillText("Razdvajanje slojeva: QES OSOBE odvojeno od AUTOMATSKOG QR ZAPISA INSTITUCIJE.", 92, 684);
 
     const quiet = 4;
     const total = qr.size + quiet * 2;
     const qrBox = 420;
     const mod = Math.floor(qrBox / total);
     const drawSize = mod * total;
-    const qx = 92, qy = 780;
+    const qx = 92, qy = 740;
     ctx.strokeRect(qx - 8, qy - 8, drawSize + 16, drawSize + 16);
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(qx, qy, drawSize, drawSize);
@@ -315,12 +315,12 @@
         }
       }
     }
-    ctx.font = "bold 22px monospace";
-    ctx.fillText(`Kontrolni broj: ${kod}`, qx + drawSize + 36, qy + 60);
-    ctx.fillText(`Broj zapisa: ${brojZapisa}`, qx + drawSize + 36, qy + 102);
+    ctx.font = "bold 21px monospace";
+    ctx.fillText(`Kontrolni broj: ${kod}`, qx + drawSize + 36, qy + 56);
+    ctx.fillText(`Broj zapisa:   ${brojZapisa}`, qx + drawSize + 36, qy + 96);
     ctx.font = "19px sans-serif";
-    ctx.fillText("Skenirajte QR kod za provjeru", qx + drawSize + 36, qy + 156);
-    ctx.fillText("i preuzimanje netaknutog izvornika.", qx + drawSize + 36, qy + 186);
+    ctx.fillText("Skenirajte QR kod za provjeru", qx + drawSize + 36, qy + 150);
+    ctx.fillText("i preuzimanje netaknutog izvornika.", qx + drawSize + 36, qy + 180);
 
     const dataUrl = c.toDataURL("image/jpeg", 0.92);
     const b64 = dataUrl.split(",")[1];
@@ -332,7 +332,8 @@
     const textLayer = [
       "BT /F1 1 Tf 50 40 Td 3 Tr",
       `(ZAJEDNICA RUKE - e-SPIS OIB: 64517735227) Tj 0 -10 Td`,
-      `(Kontrolni broj: ${pdfSafe(kod)} | Broj zapisa: ${pdfSafe(brojZapisa)}) Tj 0 -10 Td`,
+      `(Kontrolni broj: ${pdfSafe(kod)}) Tj 0 -10 Td`,
+      `(Broj zapisa: ${pdfSafe(brojZapisa)}) Tj 0 -10 Td`,
       `(Podnesak: ${pdfSafe(podnesak)}) Tj 0 -10 Td`,
       `(SHA-256: ${pdfSafe(sha)}) Tj 0 -10 Td`,
       `(QR URI: ${pdfSafe(qrUri)}) Tj ET\n`
