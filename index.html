@@ -934,5 +934,26 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
 })();
 </script>
 
+<script id="ruke-otkljuc-v7">
+(function () {
+  function osvjeziKontrole() {
+    const txt = document.body ? document.body.innerText.toLowerCase() : "";
+    const hasSha = /[0-9a-f]{64}/.test(txt) || /[0-9a-f]{64}/.test(window.location.search.toLowerCase());
+    if (!hasSha) return;
+
+    const btnGen = document.getElementById("btn-qr-gen");
+    const btnDl  = document.getElementById("btn-qr-dl");
+    const linkIz = document.getElementById("link-izvornik");
+
+    if (btnGen) btnGen.disabled = false;
+    if (btnDl)  btnDl.disabled  = false;
+    if (linkIz) linkIz.classList.remove("hidden");
+  }
+
+  window.addEventListener("DOMContentLoaded", osvjeziKontrole);
+  setInterval(osvjeziKontrole, 800);
+})();
+</script>
+
 </body>
 </html>
