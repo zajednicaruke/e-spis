@@ -1,6 +1,6 @@
 (function () {
   const QES_BASE = "https://ydeswffyfomboflcvnfm.supabase.co/storage/v1/object/public/QES-PDF";
-  const LOCAL_MANIFEST = "./manifest_oglasna_ploca.json";
+  const MANIFEST_URL = "./manifest_oglasna_ploca.json";
 
   let ucitaniIme = "";
   let ucitaniSha = "";
@@ -63,7 +63,8 @@
     }
     if (!window.RukeQrZapis) return;
     if (zadnjiPdfUrl) URL.revokeObjectURL(zadnjiPdfUrl);
-    zadnjiArtefakt = window.RukeQrZapis.pripremiArtefakte(sha, ucitaniIme || `${sha.slice(0, 12)}_podnesak.pdf`);
+    const naziv = ucitaniIme || `${sha.slice(0, 12)}_podnesak.pdf`;
+    zadnjiArtefakt = window.RukeQrZapis.pripremiArtefakte(sha, naziv);
     zadnjiPdfUrl = zadnjiArtefakt.pdfBlob ? URL.createObjectURL(zadnjiArtefakt.pdfBlob) : "";
 
     const btnDl = document.getElementById("btn-qr-dl");
@@ -101,7 +102,10 @@
 
   async function preuzmiIzSupabase(sha) {
     const p12 = sha.slice(0, 12);
-    const urls = [`${QES_BASE}/${p12}_podnesak.pdf?t=${Date.now()}`, `${QES_BASE}/${sha}.pdf?t=${Date.now()}`];
+    const urls = [
+      `${QES_BASE}/${p12}_podnesak.pdf?t=${Date.now()}`,
+      `${QES_BASE}/${sha}.pdf?t=${Date.now()}`
+    ];
     for (const u of urls) {
       try {
         const r = await fetch(u, { cache: "no-store" });
@@ -117,28 +121,24 @@
   }
 
   async function ucitajManifestOglasne() {
-    const izvori = [
-      `${QES_BASE}/manifest_oglasna_ploca.json?t=${Date.now()}`,
-      `${LOCAL_MANIFEST}?t=${Date.now()}`
-    ];
-    for (const url of izvori) {
-      try {
-        const r = await fetch(url, { cache: "no-store" });
-        if (!r.ok) continue;
-        const data = await r.json();
-        if (data && Array.isArray(data.stavke) && data.stavke.length > 0) {
-          oglasneStavke = data.stavke;
-          return data;
-        }
-      } catch (_) {}
-    }
+    try {
+      const r = await fetch(`${MANIFEST_URL}?t=${Date.now()}`, { cache: "no-store" });
+      if (!r.ok) return null;
+      const data = await r.json();
+      if (data && Array.isArray(data.stavke)) {
+        oglasneStavke = data.stavke.filter((s) => /^[0-9a-f]{64}$/i.test((s && s.sha256) || ""));
+        return data;
+      }
+    } catch (_) {}
     return null;
   }
 
   function pronadiOglasnaSelect() {
     for (const sel of document.querySelectorAll("select")) {
       const txt = (sel.innerText || sel.textContent || "").toLowerCase();
-      if (txt.includes("oglasna plo") || txt.includes("odaberite akt")) return sel;
+      if (txt.includes("oglasna plo") || txt.includes("odaberite akt") || sel.options.length > 0) {
+        return sel;
+      }
     }
     return document.querySelector("select");
   }
@@ -147,12 +147,12 @@
     if (!stavka || !/^[0-9a-f]{64}$/i.test(stavka.sha256)) return;
     const sha = stavka.sha256.toLowerCase();
     ucitaniSha = sha;
-    ucitaniIme = stavka.datoteka || `${sha.slice(0, 12)}_podnesak.pdf`;
+    ucitaniIme = `${sha.slice(0, 12)}_podnesak.pdf`;
 
     const scope = (sel && sel.closest("section, article, div")) || document;
     const inputs = Array.from(scope.querySelectorAll("input[type='text'], input:not([type])"));
-    if (inputs[0]) { inputs[0].value = stavka.kontrolni || `[${sha.slice(0, 4)}-${sha.slice(4, 8)}]`.toUpperCase(); }
-    if (inputs[1]) { inputs[1].value = stavka.broj_zapisa || `RUKE-${sha.slice(0, 12).toUpperCase()}`; }
+    if (inputs[0]) inputs[0].value = stavka.kontrolni || `[${sha.slice(0, 4)}-${sha.slice(4, 8)}]`.toUpperCase();
+    if (inputs[1]) inputs[1].value = stavka.broj_zapisa || `RUKE-${sha.slice(0, 12).toUpperCase()}`;
 
     window.generirajQrNaPodnesak();
 
@@ -176,27 +176,28 @@
   async function inicijalizirajOglasnuPlocu() {
     const sel = pronadiOglasnaSelect();
     if (!sel) return;
-    const manifest = await ucitajManifestOglasne();
-    if (!manifest) return;
+    await ucitajManifestOglasne();
 
     const existingShas = new Set(Array.from(sel.options).map((o) => (o.value || "").toLowerCase()));
     if (sel.options[0]) {
-      sel.options[0].textContent = `Oglasna ploča (${oglasneStavke.length} objavljenih akata)`;
+      sel.options[0].textContent = oglasneStavke.length > 0
+        ? `Oglasna ploča (${oglasneStavke.length})`
+        : "Oglasna ploča";
     }
 
     for (const st of oglasneStavke) {
-      const sha = (st.sha256 || "").toLowerCase();
-      if (!sha || existingShas.has(sha)) continue;
+      const sha = st.sha256.toLowerCase();
+      if (existingShas.has(sha)) continue;
       const opt = document.createElement("option");
       opt.value = sha;
-      opt.textContent = `[${st.kontrolni}] ${st.broj_zapisa} — ${st.naslov} (${st.datum})`;
+      opt.textContent = `[${st.kontrolni || sha.slice(0, 4).toUpperCase()}] ${st.oznaka || ""} — ${st.naslov || sha.slice(0, 12)}`.trim();
       sel.appendChild(opt);
       existingShas.add(sha);
     }
 
     sel.addEventListener("change", async function () {
       const val = (sel.value || "").trim().toLowerCase();
-      const hit = oglasneStavke.find((s) => (s.sha256 || "").toLowerCase() === val);
+      const hit = oglasneStavke.find((s) => s.sha256.toLowerCase() === val);
       if (hit) await primijeniStavkuOglasne(hit, sel);
     });
   }
