@@ -497,15 +497,14 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
   });
 }
 </script>
-<script id="ruke-qr-iso-v6">
+<script id="ruke-qr-global-v8">
 (function () {
   const PORTAL_BASE = "https://zajednicaruke.github.io/e-spis/";
   const QES_BASE = "https://ydeswffyfomboflcvnfm.supabase.co/storage/v1/object/public/QES-PDF";
 
-  let zadnjiQrDataUrl = "";
-  let zadnjiQrNaziv = "QR_Podnesak_eSpis.png";
-  let zadnjiPdfBlobUrl = "";
-  let zadnjiPdfNaziv = "";
+  let zadnjiQrUrl = "";
+  let zadnjiQrPng = "";
+  let zadnjiQrIme = "QR_Podnesak.png";
 
   const EXP = new Uint8Array(512);
   const LOG = new Uint8Array(256);
@@ -524,21 +523,16 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
     return (a === 0 || b === 0) ? 0 : EXP[LOG[a] + LOG[b]];
   }
 
-  function rsGeneratorPoly(ecLen) {
-    let poly = [1];
-    for (let i = 0; i < ecLen; i++) {
-      const next = new Array(poly.length + 1).fill(0);
-      for (let j = 0; j < poly.length; j++) {
-        next[j] ^= poly[j];
-        next[j + 1] ^= gfMul(poly[j], EXP[i]);
-      }
-      poly = next;
-    }
-    return poly;
-  }
-
   function rsEncode(data, ecLen) {
-    const gen = rsGeneratorPoly(ecLen);
+    let gen = [1];
+    for (let i = 0; i < ecLen; i++) {
+      const next = new Array(gen.length + 1).fill(0);
+      for (let j = 0; j < gen.length; j++) {
+        next[j] ^= gen[j];
+        next[j + 1] ^= gfMul(gen[j], EXP[i]);
+      }
+      gen = next;
+    }
     const ecc = new Array(ecLen).fill(0);
     for (let i = 0; i < data.length; i++) {
       const factor = data[i] ^ ecc[0];
@@ -560,398 +554,291 @@ for (const [dzId, inId] of [['drop-podnesak', 'in-podnesak'], ['drop-dss', 'in-d
     6: { total: 172, ec: 18 }
   };
 
-  function encodeIsoQrMatrix(text) {
+  function encodeQr(text) {
     const utf8 = new TextEncoder().encode(text);
     let ver = 0;
     for (let v = 1; v <= 6; v++) {
-      const dataCap = VER_INFO[v].total - VER_INFO[v].ec;
-      if (Math.ceil((12 + utf8.length * 8) / 8) <= dataCap) {
-        ver = v;
-        break;
-      }
+      const cap = VER_INFO[v].total - VER_INFO[v].ec;
+      if (Math.ceil((12 + utf8.length * 8) / 8) <= cap) { ver = v; break; }
     }
     if (!ver) return null;
 
     const info = VER_INFO[ver];
-    const dataCap = info.total - info.ec;
+    const cap = info.total - info.ec;
     const bits = [];
-    function pushBits(val, len) {
-      for (let i = len - 1; i >= 0; i--) bits.push((val >>> i) & 1);
-    }
+    const push = (val, len) => { for (let i = len - 1; i >= 0; i--) bits.push((val >>> i) & 1); };
 
-    pushBits(0b0100, 4);
-    pushBits(utf8.length, 8);
-    for (const b of utf8) pushBits(b, 8);
-
-    const maxDataBits = dataCap * 8;
-    const termLen = Math.min(4, maxDataBits - bits.length);
-    if (termLen > 0) pushBits(0, termLen);
+    push(0b0100, 4);
+    push(utf8.length, 8);
+    for (const b of utf8) push(b, 8);
+    const term = Math.min(4, cap * 8 - bits.length);
+    if (term > 0) push(0, term);
     while (bits.length % 8 !== 0) bits.push(0);
 
-    const codewords = [];
+    const cw = [];
     for (let i = 0; i < bits.length; i += 8) {
-      let cw = 0;
-      for (let j = 0; j < 8; j++) cw = (cw << 1) | bits[i + j];
-      codewords.push(cw);
+      let v = 0;
+      for (let j = 0; j < 8; j++) v = (v << 1) | bits[i + j];
+      cw.push(v);
     }
-    const padBytes = [0xec, 0x11];
-    let pIdx = 0;
-    while (codewords.length < dataCap) {
-      codewords.push(padBytes[pIdx % 2]);
-      pIdx++;
-    }
+    const pads = [0xec, 0x11];
+    let p = 0;
+    while (cw.length < cap) { cw.push(pads[p % 2]); p++; }
 
-    const ecc = rsEncode(codewords, info.ec);
-    const fullCw = codewords.concat(ecc);
+    const ecc = rsEncode(cw, info.ec);
     const stream = [];
-    for (const cw of fullCw) {
-      for (let i = 7; i >= 0; i--) stream.push((cw >>> i) & 1);
-    }
-    const remBits = { 1: 0, 2: 7, 3: 7, 4: 7, 5: 7, 6: 7 }[ver] || 0;
-    for (let i = 0; i < remBits; i++) stream.push(0);
+    for (const w of cw.concat(ecc)) for (let i = 7; i >= 0; i--) stream.push((w >>> i) & 1);
+    const rem = { 1: 0, 2: 7, 3: 7, 4: 7, 5: 7, 6: 7 }[ver] || 0;
+    for (let i = 0; i < rem; i++) stream.push(0);
 
     const size = 17 + 4 * ver;
     const mat = Array.from({ length: size }, () => new Int8Array(size));
-    const reserved = Array.from({ length: size }, () => new Uint8Array(size));
+    const res = Array.from({ length: size }, () => new Uint8Array(size));
 
-    function setFunc(r, c, dark) {
-      if (r < 0 || r >= size || c < 0 || c >= size) return;
-      mat[r][c] = dark ? 1 : -1;
-      reserved[r][c] = 1;
+    function setF(r, c, d) {
+      if (r >= 0 && r < size && c >= 0 && c < size) { mat[r][c] = d ? 1 : -1; res[r][c] = 1; }
     }
-
-    function placeFinder(r0, c0) {
+    function finder(r0, c0) {
       for (let r = -1; r <= 7; r++) {
         for (let c = -1; c <= 7; c++) {
           const rr = r0 + r, cc = c0 + c;
           if (rr < 0 || rr >= size || cc < 0 || cc >= size) continue;
-          const inBox = (r >= 0 && r <= 6 && c >= 0 && c <= 6);
-          const border = (r === 0 || r === 6 || c === 0 || c === 6);
-          const center = (r >= 2 && r <= 4 && c >= 2 && c <= 4);
-          setFunc(rr, cc, inBox ? (border || center) : false);
+          const box = r >= 0 && r <= 6 && c >= 0 && c <= 6;
+          const ring = r === 0 || r === 6 || c === 0 || c === 6;
+          const dot = r >= 2 && r <= 4 && c >= 2 && c <= 4;
+          setF(rr, cc, box ? (ring || dot) : false);
         }
       }
     }
-
-    placeFinder(0, 0);
-    placeFinder(0, size - 7);
-    placeFinder(size - 7, 0);
-
+    finder(0, 0);
+    finder(0, size - 7);
+    finder(size - 7, 0);
     if (ver >= 2) {
       const ap = size - 7;
       for (let r = -2; r <= 2; r++) {
         for (let c = -2; c <= 2; c++) {
-          const dist = Math.max(Math.abs(r), Math.abs(c));
-          setFunc(ap + r, ap + c, dist === 2 || dist === 0);
+          const d = Math.max(Math.abs(r), Math.abs(c));
+          setF(ap + r, ap + c, d === 2 || d === 0);
         }
       }
     }
-
     for (let i = 8; i < size - 8; i++) {
-      setFunc(6, i, i % 2 === 0);
-      setFunc(i, 6, i % 2 === 0);
+      setF(6, i, i % 2 === 0);
+      setF(i, 6, i % 2 === 0);
     }
-    setFunc(size - 8, 8, true);
+    setF(size - 8, 8, true);
 
-    for (let i = 0; i < 9; i++) {
-      if (i !== 6) { reserved[8][i] = 1; reserved[i][8] = 1; }
-    }
-    for (let i = 0; i < 8; i++) {
-      reserved[8][size - 1 - i] = 1;
-      reserved[size - 1 - i][8] = 1;
-    }
+    for (let i = 0; i < 9; i++) { if (i !== 6) { res[8][i] = 1; res[i][8] = 1; } }
+    for (let i = 0; i < 8; i++) { res[8][size - 1 - i] = 1; res[size - 1 - i][8] = 1; }
 
-    let bitPos = 0;
-    let dirUp = true;
+    let idx = 0, up = true;
     for (let col = size - 1; col >= 1; col -= 2) {
       if (col === 6) col = 5;
-      const rows = dirUp
-        ? Array.from({ length: size }, (_, k) => size - 1 - k)
-        : Array.from({ length: size }, (_, k) => k);
+      const rows = up ? Array.from({ length: size }, (_, k) => size - 1 - k)
+                      : Array.from({ length: size }, (_, k) => k);
       for (const r of rows) {
         for (const dc of [0, -1]) {
           const c = col + dc;
-          if (c < 0 || reserved[r][c]) continue;
-          const b = bitPos < stream.length ? stream[bitPos++] : 0;
-          mat[r][c] = b ? 1 : -1;
+          if (c < 0 || res[r][c]) continue;
+          mat[r][c] = (idx < stream.length && stream[idx++]) ? 1 : -1;
         }
       }
-      dirUp = !dirUp;
+      up = !up;
     }
 
     for (let r = 0; r < size; r++) {
       for (let c = 0; c < size; c++) {
-        if (!reserved[r][c]) {
-          const dark = (mat[r][c] === 1) ^ ((r + c) % 2 === 0);
-          mat[r][c] = dark ? 1 : -1;
-        }
+        if (!res[r][c]) mat[r][c] = ((mat[r][c] === 1) ^ ((r + c) % 2 === 0)) ? 1 : -1;
       }
     }
 
     const fmtData = 0b01000;
-    let rem = fmtData << 10;
-    const genPoly = 0b10100110111;
-    for (let i = 14; i >= 10; i--) {
-      if ((rem >>> i) & 1) rem ^= (genPoly << (i - 10));
-    }
-    const fmtBits15 = ((fmtData << 10) | (rem & 0x3ff)) ^ 0b101010000010010;
-    function bit15(idx) { return ((fmtBits15 >>> (14 - idx)) & 1) === 1; }
-
-    const horizC = [0, 1, 2, 3, 4, 5, 7, 8, size - 8, size - 7, size - 6, size - 5, size - 4, size - 3, size - 2];
-    const vertR  = [size - 1, size - 2, size - 3, size - 4, size - 5, size - 6, size - 7, 8, 7, 5, 4, 3, 2, 1, 0];
+    let rBits = fmtData << 10;
+    const poly = 0b10100110111;
+    for (let i = 14; i >= 10; i--) if ((rBits >>> i) & 1) rBits ^= (poly << (i - 10));
+    const fmt = ((fmtData << 10) | (rBits & 0x3ff)) ^ 0b101010000010010;
+    const bAt = (i) => ((fmt >>> (14 - i)) & 1) === 1;
+    const hC = [0, 1, 2, 3, 4, 5, 7, 8, size - 8, size - 7, size - 6, size - 5, size - 4, size - 3, size - 2];
+    const vR = [size - 1, size - 2, size - 3, size - 4, size - 5, size - 6, size - 7, 8, 7, 5, 4, 3, 2, 1, 0];
     for (let i = 0; i < 15; i++) {
-      mat[8][horizC[i]] = bit15(i) ? 1 : -1;
-      mat[vertR[i]][8]  = bit15(i) ? 1 : -1;
+      mat[8][hC[i]] = bAt(i) ? 1 : -1;
+      mat[vR[i]][8] = bAt(i) ? 1 : -1;
     }
-
-    return { mat, size, ver };
+    return { mat, size };
   }
 
-  function renderIsoQrCanvas(text, pxSize) {
-    const qr = encodeIsoQrMatrix(text);
-    const canvas = document.createElement("canvas");
-    canvas.width = pxSize;
-    canvas.height = pxSize;
+  function drawQrToCanvas(canvas, text) {
+    const qr = encodeQr(text);
+    const px = canvas.width || 240;
+    canvas.width = px;
+    canvas.height = px;
     const ctx = canvas.getContext("2d");
     ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, pxSize, pxSize);
-    if (!qr) return canvas;
-
+    ctx.fillRect(0, 0, px, px);
+    if (!qr) return canvas.toDataURL("image/png");
     const quiet = 4;
-    const totalMod = qr.size + quiet * 2;
-    const modPx = Math.max(2, Math.floor(pxSize / totalMod));
-    const drawPx = modPx * totalMod;
-    const off = Math.floor((pxSize - drawPx) / 2);
-
+    const total = qr.size + quiet * 2;
+    const mod = Math.max(2, Math.floor(px / total));
+    const off = Math.floor((px - mod * total) / 2);
     ctx.fillStyle = "#000000";
     for (let r = 0; r < qr.size; r++) {
       for (let c = 0; c < qr.size; c++) {
-        if (qr.mat[r][c] === 1) {
-          ctx.fillRect(off + (c + quiet) * modPx, off + (r + quiet) * modPx, modPx, modPx);
-        }
+        if (qr.mat[r][c] === 1) ctx.fillRect(off + (c + quiet) * mod, off + (r + quiet) * mod, mod, mod);
       }
     }
-    return canvas;
+    return canvas.toDataURL("image/png");
   }
 
-  function nadjiPodatke() {
+  function aktivniSha() {
     const q = new URLSearchParams(window.location.search);
-    let sha = (q.get("sha256") || "").trim().toLowerCase();
-    let kod = (q.get("kod") || "").trim().toUpperCase();
-    let broj = (q.get("broj") || "").trim();
-
+    const u = (q.get("sha256") || "").trim().toLowerCase();
+    if (/^[0-9a-f]{64}$/.test(u)) return u;
     for (const el of document.querySelectorAll("input, textarea, select")) {
-      const v = (el.value || "").trim();
-      const low = v.toLowerCase();
-      if (!sha) {
-        const m = low.match(/[0-9a-f]{64}/);
-        if (m) sha = m[0];
-      }
-      if (!kod) {
-        const mk = v.toUpperCase().match(/[0-9A-F]{4}-[0-9A-F]{4}/);
-        if (mk) kod = mk[0];
-      }
-      if (!broj && v.includes("-") && !/^[0-9a-f]{4}-[0-9a-f]{4}$/i.test(v) && v.length >= 6) {
-        broj = v;
-      }
+      const m = ((el.value || "").trim().toLowerCase()).match(/[0-9a-f]{64}/);
+      if (m) return m[0];
     }
-    if (!sha && document.body) {
+    if (document.body) {
       const m2 = document.body.innerText.toLowerCase().match(/[0-9a-f]{64}/);
-      if (m2) sha = m2[0];
+      if (m2) return m2[0];
     }
-    if (!kod && /^[0-9a-f]{64}$/.test(sha)) {
-      kod = `${sha.slice(0, 4)}-${sha.slice(4, 8)}`.toUpperCase();
-    }
-    return { sha, kod, broj };
+    return "";
   }
+
+  window.generirajQrNaPodnesak = function () {
+    const sha = aktivniSha();
+    if (!/^[0-9a-f]{64}$/.test(sha)) {
+      alert("Nema aktivnog 64-znakovnog SHA-256 za Podnesak.");
+      return;
+    }
+    zadnjiQrUrl = `${PORTAL_BASE}?sha256=${sha}`;
+    zadnjiQrIme = `QR_${sha.slice(0, 8).toUpperCase()}.png`;
+
+    let c = document.getElementById("qr-canvas");
+    if (!c) {
+      c = document.createElement("canvas");
+      c.id = "qr-canvas";
+      c.width = 240;
+      c.height = 240;
+    }
+    zadnjiQrPng = drawQrToCanvas(c, zadnjiQrUrl);
+
+    const btnDl = document.getElementById("btn-qr-dl");
+    if (btnDl) btnDl.disabled = false;
+
+    let wrap = document.getElementById("ruke-qr-aktivni-okvir");
+    if (!wrap) {
+      wrap = document.createElement("div");
+      wrap.id = "ruke-qr-aktivni-okvir";
+      wrap.style.marginTop = "10px";
+      wrap.style.padding = "10px";
+      wrap.style.border = "1px solid #999";
+      wrap.style.background = "#fff";
+      wrap.style.color = "#111";
+      const anchor = btnDl ? btnDl.parentElement : document.body;
+      anchor.appendChild(wrap);
+    }
+    wrap.innerHTML =
+      `<div><b>QR poveznica Podneska:</b> <a href="${zadnjiQrUrl}" target="_blank" rel="noopener">${zadnjiQrUrl}</a></div>` +
+      `<div style="margin-top:8px"><img src="${zadnjiQrPng}" alt="QR kod" width="180" height="180" style="border:1px solid #ccc;padding:4px;background:#fff"></div>` +
+      `<div style="margin-top:8px"><a href="${zadnjiQrPng}" download="${zadnjiQrIme}">Preuzmi QR PNG (${zadnjiQrIme})</a></div>`;
+  };
+
+  window.preuzmiQrPodneska = function () {
+    if (!zadnjiQrPng) window.generirajQrNaPodnesak();
+    if (!zadnjiQrPng) return;
+    const a = document.createElement("a");
+    a.href = zadnjiQrPng;
+    a.download = zadnjiQrIme;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
 
   async function sha256Hex(buf) {
     const d = await crypto.subtle.digest("SHA-256", buf);
     return Array.from(new Uint8Array(d)).map((b) => b.toString(16).padStart(2, "0")).join("");
   }
 
-  function nadjiSekciju(dio) {
-    return Array.from(document.querySelectorAll("section, div, article")).find((el) =>
-      (el.innerText || "").includes(dio)
-    ) || null;
-  }
-
-  function prikaziQrNaPodnesak() {
-    const pod = nadjiPodatke();
-    if (!/^[0-9a-f]{64}$/.test(pod.sha)) {
-      alert("Nema aktivnog 64-znakovnog SHA-256 zapisa za Podnesak.");
-      return;
-    }
-    const u = new URL(PORTAL_BASE);
-    u.searchParams.set("sha256", pod.sha);
-    if (pod.kod) u.searchParams.set("kod", pod.kod);
-    if (pod.broj) u.searchParams.set("broj", pod.broj);
-    const qrUri = u.toString();
-
-    const qrCanvas = renderIsoQrCanvas(qrUri, 260);
-    zadnjiQrDataUrl = qrCanvas.toDataURL("image/png");
-    zadnjiQrNaziv = `QR_${pod.kod || pod.sha.slice(0, 8)}.png`;
-
-    const sec3 = nadjiSekciju("3) Generiranje QR koda na Podnesak") || nadjiSekciju("Generiranje QR");
-    if (sec3) {
-      for (const c of sec3.querySelectorAll("canvas")) {
-        const ctx = c.getContext("2d");
-        if (ctx) {
-          c.width = qrCanvas.width;
-          c.height = qrCanvas.height;
-          ctx.drawImage(qrCanvas, 0, 0);
-        }
-      }
-      for (const im of sec3.querySelectorAll("img")) {
-        if (!im.src || im.src.startsWith("data:") || im.alt.toLowerCase().includes("qr")) {
-          im.src = zadnjiQrDataUrl;
-        }
-      }
-      for (const inp of sec3.querySelectorAll("input, textarea")) {
-        if (!inp.value || inp.value.includes("http") || inp.value.includes("Ceka se")) {
-          inp.value = qrUri;
-        }
-      }
-    }
-
-    let box = document.getElementById("ruke-qr-prikaz-v6");
-    if (!box) {
-      box = document.createElement("div");
-      box.id = "ruke-qr-prikaz-v6";
-      box.style.marginTop = "10px";
-      (sec3 || document.body).appendChild(box);
-    }
-    box.innerHTML =
-      `<div><b>Kontrolni zapis:</b> [${pod.kod}] | <b>Broj zapisa:</b> ${pod.broj || "-"}</div>` +
-      `<div><b>QR poveznica (preuzimanje i DSS preko QR):</b> <a href="${qrUri}" target="_blank" rel="noopener">${qrUri}</a></div>` +
-      `<div style="margin-top:8px"><img src="${zadnjiQrDataUrl}" alt="QR Podnesak" width="180" height="180" style="border:1px solid #888;padding:4px;background:#fff"></div>` +
-      `<div style="margin-top:8px"><a href="${zadnjiQrDataUrl}" download="${zadnjiQrNaziv}">Izravno preuzmi QR sliku (${zadnjiQrNaziv})</a></div>`;
-  }
-
-  function preuzmiQrSliku() {
-    if (!zadnjiQrDataUrl) prikaziQrNaPodnesak();
-    if (!zadnjiQrDataUrl) return;
-    const a = document.createElement("a");
-    a.href = zadnjiQrDataUrl;
-    a.download = zadnjiQrNaziv;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  }
-
-  async function dohvatiIProvjeriPodnesak(sha) {
+  async function preuzmiPoQrSha(sha) {
     const p12 = sha.slice(0, 12);
-    const kandidati = [`${p12}_podnesak.pdf`, `${sha}.pdf`];
-    for (const obj of kandidati) {
-      const url = `${QES_BASE}/${encodeURIComponent(obj)}?t=${Date.now()}`;
+    const urls = [
+      `${QES_BASE}/${p12}_podnesak.pdf?t=${Date.now()}`,
+      `${QES_BASE}/${sha}.pdf?t=${Date.now()}`
+    ];
+    for (const u of urls) {
       try {
-        const r = await fetch(url, { cache: "no-store" });
+        const r = await fetch(u, { cache: "no-store" });
         if (!r.ok) continue;
         const buf = await r.arrayBuffer();
         const calc = await sha256Hex(buf);
-        if (calc !== sha) return { ok: false, error: `SHA-256 ne podudara (${calc} != ${sha})` };
-
-        const u8 = new Uint8Array(buf);
-        const isPdf = u8.length >= 5 && u8[0] === 0x25 && u8[1] === 0x50 && u8[2] === 0x44 && u8[3] === 0x46 && u8[4] === 0x2d;
-        const sec4 = nadjiSekciju("4) DSS validacija") || nadjiSekciju("DSS validacija");
-        let dssBox = document.getElementById("ruke-dss-rezultat-v6");
-        if (!dssBox) {
-          dssBox = document.createElement("div");
-          dssBox.id = "ruke-dss-rezultat-v6";
-          dssBox.style.marginTop = "10px";
-          dssBox.style.padding = "8px";
-          dssBox.style.border = "1px solid #888";
-          (sec4 || document.body).appendChild(dssBox);
-        }
-        dssBox.innerHTML =
-          `<div><b>DSS / SHA-256 verifikacija:</b> POTVRĐENO (%PDF-: ${isPdf ? "DA" : "NE"}, ${u8.length} B)</div>` +
-          `<div><b>SHA-256:</b> <code>${sha}</code></div>` +
-          `<div><b>QES osobe:</b> NE (NEMA QES OSOBE) | <b>Automatski QR / zapis institucije:</b> NE</div>`;
-
-        if (zadnjiPdfBlobUrl) URL.revokeObjectURL(zadnjiPdfBlobUrl);
+        if (calc !== sha) continue;
         const blob = new Blob([buf], { type: "application/pdf" });
-        zadnjiPdfBlobUrl = URL.createObjectURL(blob);
-        zadnjiPdfNaziv = `${p12}_podnesak.pdf`;
-        return { ok: true, blobUrl: zadnjiPdfBlobUrl, fname: zadnjiPdfNaziv };
+        const blobUrl = URL.createObjectURL(blob);
+        const fname = `${p12}_podnesak.pdf`;
+        const linkIz = document.getElementById("link-izvornik");
+        if (linkIz) {
+          linkIz.href = blobUrl;
+          linkIz.download = fname;
+          linkIz.classList.remove("hidden");
+        }
+        return { blobUrl, fname };
       } catch (_) {}
     }
-    return { ok: false, error: "Podnesak nije pronađen u QES-PDF bucketu za traženi SHA-256." };
-  }
-
-  async function preuzmiPodnesak() {
-    const pod = nadjiPodatke();
-    if (!/^[0-9a-f]{64}$/.test(pod.sha)) {
-      alert("Nema aktivnog 64-znakovnog SHA-256 za preuzimanje Podneska.");
-      return;
-    }
-    const res = await dohvatiIProvjeriPodnesak(pod.sha);
-    if (!res.ok) {
-      alert(res.error);
-      return;
-    }
-    const a = document.createElement("a");
-    a.href = res.blobUrl;
-    a.download = res.fname;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    return null;
   }
 
   document.addEventListener("click", async function (ev) {
-    const t = ev.target ? ev.target.closest("button, a, input[type=button], input[type=submit]") : null;
+    const t = ev.target ? ev.target.closest("button, a") : null;
     if (!t) return;
-    const lbl = ((t.innerText || t.value || t.textContent || "")).trim().toLowerCase();
-
+    const lbl = ((t.innerText || t.textContent || "")).trim().toLowerCase();
     if (lbl.includes("generiraj qr")) {
       ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
-      prikaziQrNaPodnesak();
+      window.generirajQrNaPodnesak();
     } else if (lbl.includes("preuzmi qr")) {
       ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
-      preuzmiQrSliku();
-    } else if (lbl.includes("preuzmi izvornik") || lbl.includes("preuzmi podnesak")) {
-      ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
-      await preuzmiPodnesak();
+      window.preuzmiQrPodneska();
+    } else if (lbl.includes("preuzmi izvornik")) {
+      const sha = aktivniSha();
+      if (/^[0-9a-f]{64}$/.test(sha)) {
+        ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
+        const res = await preuzmiPoQrSha(sha);
+        if (!res) {
+          alert("Podnesak nije pronađen u QES-PDF bucketu.");
+          return;
+        }
+        const a = document.createElement("a");
+        a.href = res.blobUrl;
+        a.download = res.fname;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(res.blobUrl), 15000);
+      }
     }
   }, true);
 
   window.addEventListener("DOMContentLoaded", async function () {
-    const pod = nadjiPodatke();
-    if (/^[0-9a-f]{64}$/.test(pod.sha)) {
-      prikaziQrNaPodnesak();
-      const res = await dohvatiIProvjeriPodnesak(pod.sha);
-      if (res.ok) {
-        let dlBox = document.getElementById("ruke-pdf-spreman-v6");
+    const q = new URLSearchParams(window.location.search);
+    const sha = (q.get("sha256") || "").trim().toLowerCase();
+    if (/^[0-9a-f]{64}$/.test(sha)) {
+      window.generirajQrNaPodnesak();
+      const res = await preuzmiPoQrSha(sha);
+      if (res) {
+        let dlBox = document.getElementById("ruke-qr-izravno-pdf");
         if (!dlBox) {
           dlBox = document.createElement("div");
-          dlBox.id = "ruke-pdf-spreman-v6";
+          dlBox.id = "ruke-qr-izravno-pdf";
           dlBox.style.marginTop = "10px";
+          dlBox.style.padding = "8px";
+          dlBox.style.border = "1px solid #2da44e";
+          dlBox.style.background = "#fff";
+          dlBox.style.color = "#111";
           document.body.appendChild(dlBox);
         }
-        dlBox.innerHTML = `<a href="${res.blobUrl}" download="${res.fname}">Preuzmi izvorni PDF Podneska (${res.fname})</a>`;
+        dlBox.innerHTML = `<b>Preuzimanje preko QR koda spremno:</b> <a href="${res.blobUrl}" download="${res.fname}">${res.fname}</a>`;
       }
     }
   });
-})();
-</script>
-
-<script id="ruke-otkljuc-v7">
-(function () {
-  function osvjeziKontrole() {
-    const txt = document.body ? document.body.innerText.toLowerCase() : "";
-    const hasSha = /[0-9a-f]{64}/.test(txt) || /[0-9a-f]{64}/.test(window.location.search.toLowerCase());
-    if (!hasSha) return;
-
-    const btnGen = document.getElementById("btn-qr-gen");
-    const btnDl  = document.getElementById("btn-qr-dl");
-    const linkIz = document.getElementById("link-izvornik");
-
-    if (btnGen) btnGen.disabled = false;
-    if (btnDl)  btnDl.disabled  = false;
-    if (linkIz) linkIz.classList.remove("hidden");
-  }
-
-  window.addEventListener("DOMContentLoaded", osvjeziKontrole);
-  setInterval(osvjeziKontrole, 800);
 })();
 </script>
 
