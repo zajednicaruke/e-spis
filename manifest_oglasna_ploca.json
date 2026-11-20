@@ -1,0 +1,38 @@
+{
+  "registar": "Zajednica RUKE — Suvereni Registar e-Spis",
+  "oib": "64517735227",
+  "bucket": "QES-PDF",
+  "azurirano_utc": "2026-11-20T13:16:33Z",
+  "stavke": [
+    {
+      "oznaka": "R-00.01",
+      "kontrolni": "39D4-227B",
+      "broj_zapisa": "RUKE-39D4227B5A03",
+      "naslov": "Studija: Skandal TIGRA od PAPIRA & Slucaj PUZ-eva kucica (v2)",
+      "datum": "2026-11-20",
+      "sha256": "39d4227b5a03fa50e043028b1bac9d384cf4afcc729a728842d643125fabb1a9",
+      "datoteka": "39d4227b5a03_podnesak.pdf",
+      "status": "Certilia QES / Izvornik netaknut"
+    },
+    {
+      "oznaka": "R-00.02",
+      "kontrolni": "2320-ACF5",
+      "broj_zapisa": "RUKE-2320ACF57020",
+      "naslov": "Podnesak i dokazni zapisnik registra e-Spis (RUKE-2320ACF5)",
+      "datum": "2026-11-20",
+      "sha256": "2320acf57020219c061ac13318a6359a46afdde7bcc42c0cb47a43798cd167dc",
+      "datoteka": "2320acf57020_podnesak.pdf",
+      "status": "Certilia QES / Izvornik netaknut"
+    },
+    {
+      "oznaka": "R-00.03",
+      "kontrolni": "0F4E-42F5",
+      "broj_zapisa": "RUKE-0F4E42F58B75",
+      "naslov": "Podnesak i forenzicki prilog registra e-Spis (RUKE-0F4E42F5)",
+      "datum": "2026-11-20",
+      "sha256": "0f4e42f58b7591038cc6b1bfa25dc69230780da8d3061f6b8b764461c7ee3971",
+      "datoteka": "0f4e42f58b75_podnesak.pdf",
+      "status": "Certilia QES / Izvornik netaknut"
+    }
+  ]
+}

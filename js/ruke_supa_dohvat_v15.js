@@ -1,10 +1,12 @@
 (function () {
   const QES_BASE = "https://ydeswffyfomboflcvnfm.supabase.co/storage/v1/object/public/QES-PDF";
+  const LOCAL_MANIFEST = "./manifest_oglasna_ploca.json";
 
   let ucitaniIme = "";
   let ucitaniSha = "";
   let zadnjiArtefakt = null;
   let zadnjiPdfUrl = "";
+  let oglasneStavke = [];
 
   async function sha256Hex(buf) {
     const d = await crypto.subtle.digest("SHA-256", buf);
@@ -114,6 +116,91 @@
     return null;
   }
 
+  async function ucitajManifestOglasne() {
+    const izvori = [
+      `${QES_BASE}/manifest_oglasna_ploca.json?t=${Date.now()}`,
+      `${LOCAL_MANIFEST}?t=${Date.now()}`
+    ];
+    for (const url of izvori) {
+      try {
+        const r = await fetch(url, { cache: "no-store" });
+        if (!r.ok) continue;
+        const data = await r.json();
+        if (data && Array.isArray(data.stavke) && data.stavke.length > 0) {
+          oglasneStavke = data.stavke;
+          return data;
+        }
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  function pronadiOglasnaSelect() {
+    for (const sel of document.querySelectorAll("select")) {
+      const txt = (sel.innerText || sel.textContent || "").toLowerCase();
+      if (txt.includes("oglasna plo") || txt.includes("odaberite akt")) return sel;
+    }
+    return document.querySelector("select");
+  }
+
+  async function primijeniStavkuOglasne(stavka, sel) {
+    if (!stavka || !/^[0-9a-f]{64}$/i.test(stavka.sha256)) return;
+    const sha = stavka.sha256.toLowerCase();
+    ucitaniSha = sha;
+    ucitaniIme = stavka.datoteka || `${sha.slice(0, 12)}_podnesak.pdf`;
+
+    const scope = (sel && sel.closest("section, article, div")) || document;
+    const inputs = Array.from(scope.querySelectorAll("input[type='text'], input:not([type])"));
+    if (inputs[0]) { inputs[0].value = stavka.kontrolni || `[${sha.slice(0, 4)}-${sha.slice(4, 8)}]`.toUpperCase(); }
+    if (inputs[1]) { inputs[1].value = stavka.broj_zapisa || `RUKE-${sha.slice(0, 12).toUpperCase()}`; }
+
+    window.generirajQrNaPodnesak();
+
+    const res = await preuzmiIzSupabase(sha);
+    if (res) {
+      let dlBox = document.getElementById("ruke-qr-izravno-pdf");
+      if (!dlBox) {
+        dlBox = document.createElement("div");
+        dlBox.id = "ruke-qr-izravno-pdf";
+        dlBox.style.marginTop = "10px"; dlBox.style.padding = "8px";
+        dlBox.style.border = "1px solid #2da44e"; dlBox.style.background = "#fff"; dlBox.style.color = "#111";
+        if (sel && sel.parentElement) sel.parentElement.appendChild(dlBox);
+        else document.body.appendChild(dlBox);
+      }
+      dlBox.innerHTML =
+        `<div><b>Oglasna ploča (${stavka.oznaka || "e-Spis"}):</b> ${stavka.naslov || res.fname}</div>` +
+        `<div style="margin-top:4px"><b>Netaknuti izvornik (SHA-256 potvrđen):</b> <a href="${res.blobUrl}" download="${res.fname}">${res.fname}</a></div>`;
+    }
+  }
+
+  async function inicijalizirajOglasnuPlocu() {
+    const sel = pronadiOglasnaSelect();
+    if (!sel) return;
+    const manifest = await ucitajManifestOglasne();
+    if (!manifest) return;
+
+    const existingShas = new Set(Array.from(sel.options).map((o) => (o.value || "").toLowerCase()));
+    if (sel.options[0]) {
+      sel.options[0].textContent = `Oglasna ploča (${oglasneStavke.length} objavljenih akata)`;
+    }
+
+    for (const st of oglasneStavke) {
+      const sha = (st.sha256 || "").toLowerCase();
+      if (!sha || existingShas.has(sha)) continue;
+      const opt = document.createElement("option");
+      opt.value = sha;
+      opt.textContent = `[${st.kontrolni}] ${st.broj_zapisa} — ${st.naslov} (${st.datum})`;
+      sel.appendChild(opt);
+      existingShas.add(sha);
+    }
+
+    sel.addEventListener("change", async function () {
+      const val = (sel.value || "").trim().toLowerCase();
+      const hit = oglasneStavke.find((s) => (s.sha256 || "").toLowerCase() === val);
+      if (hit) await primijeniStavkuOglasne(hit, sel);
+    });
+  }
+
   document.addEventListener("change", async function (ev) {
     const inp = ev.target;
     if (!inp || inp.type !== "file" || !inp.files || !inp.files[0]) return;
@@ -136,7 +223,7 @@
     } else if (lbl.includes("preuzmi qr")) {
       ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
       window.preuzmiQrPodneska();
-    } else if (lbl.includes("preuzmi izvornik")) {
+    } else if (lbl.includes("dohvati izvornik") || lbl.includes("preuzmi izvornik")) {
       const sha = aktivniSha();
       if (/^[0-9a-f]{64}$/.test(sha)) {
         ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
@@ -150,10 +237,11 @@
     }
   }, true);
 
- 
-window.addEventListener("DOMContentLoaded", async function () {
+  window.addEventListener("DOMContentLoaded", async function () {
     const btnDl = document.getElementById("btn-qr-dl");
     osigurajPdfTipku(btnDl);
+    await inicijalizirajOglasnuPlocu();
+
     const sha = aktivniSha();
     if (/^[0-9a-f]{64}$/.test(sha)) {
       window.generirajQrNaPodnesak();
