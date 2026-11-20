@@ -143,7 +143,7 @@ canvas#qr-canvas {
 }
 .hidden { display: none; }
 </style>
-<style id="ruke-ux-v16-style">#ruke-aktivni-kontekst{margin:10px 0;padding:8px 10px;border:1px solid #4a5568;border-radius:6px;font-size:0.9rem;line-height:1.4}.ruke-qr-btn-red{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}#ruke-validiraj-ucitani-btn{margin-top:8px}</style>
+<style id="ruke-ux-v17-style">#ruke-aktivni-kontekst{margin:10px 0 14px;padding:10px 12px;border:1px solid #475569;border-radius:8px;font-size:0.9rem;line-height:1.45;background:rgba(15,23,42,0.04)}.ruke-qr-btn-red{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}#ruke-dss-rezultat{margin-top:10px;padding:10px 12px;border:1px solid #475569;border-radius:6px;font-size:0.88rem;line-height:1.45;white-space:pre-wrap;font-family:monospace}</style>
 </head>
 <body>
 <div class="wrap">
@@ -186,7 +186,7 @@ canvas#qr-canvas {
           <div class="muted">Lokalna FIPS 180-4 obrada bez slanja na poslužitelj</div>
           <input id="in-podnesak" type="file" class="hidden" onchange="ucitajPodnesak(this.files[0])">
         </div>
-        <div id="out-podnesak" class="mono-box">Nije ucitan nijedan podnesak.</div>
+        <div id="out-podnesak" class="mono-box"></div>
         <div class="field-row">
           <button id="btn-potvrda-dl" class="btn-action btn-green" type="button" onclick="preuzmiPotvrduPodneska()" disabled>Preuzmi Potvrdu Podneska (.txt)</button>
         </div>
@@ -226,7 +226,7 @@ canvas#qr-canvas {
         </div>
         <div class="qr-wrap">
           <canvas id="qr-canvas" width="180" height="180"></canvas>
-          <div id="out-qr" class="mono-box" style="width:100%;">Ceka se Podnesak i dohvaceni zapis iz tocke 2.</div>
+          <div id="out-qr" class="mono-box" style="width:100%;"></div>
         </div>
       </section>
 

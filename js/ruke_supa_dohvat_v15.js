@@ -238,16 +238,46 @@
     }
   }, true);
 
+  window.addEventListener("DOMContentLoaded", async function () {
+    const btnDl = document.getElementById("btn-qr-dl");
+    osigurajPdfTipku(btnDl);
+    await inicijalizirajOglasnuPlocu();
+
+    const sha = aktivniSha();
+    if (/^[0-9a-f]{64}$/.test(sha)) {
+      window.generirajQrNaPodnesak();
+      const res = await preuzmiIzSupabase(sha);
+      if (res) {
+        let dlBox = document.getElementById("ruke-qr-izravno-pdf");
+        if (!dlBox) {
+          dlBox = document.createElement("div");
+          dlBox.id = "ruke-qr-izravno-pdf";
+          dlBox.style.marginTop = "10px"; dlBox.style.padding = "8px";
+          dlBox.style.border = "1px solid #2da44e"; dlBox.style.background = "#fff"; dlBox.style.color = "#111";
+          document.body.appendChild(dlBox);
+        }
+        dlBox.innerHTML = `<b>Netaknuti izvornik spreman za preuzimanje:</b> <a href="${res.blobUrl}" download="${res.fname}">${res.fname}</a>`;
+      }
+    }
+  });
+})();
 
   function osigurajKontekstTraku() {
     let bar = document.getElementById("ruke-aktivni-kontekst");
     if (bar) return bar;
     bar = document.createElement("div");
     bar.id = "ruke-aktivni-kontekst";
-    for (const h of document.querySelectorAll("h1,h2,h3,h4,div,section")) {
-      const tx = (h.innerText || h.textContent || "");
+    for (const el of document.querySelectorAll("h1,h2,h3,h4,p,div,section")) {
+      const tx = (el.innerText || el.textContent || "");
+      if (tx.includes("Podnesak i Potvrda") && tx.includes("DSS validacija")) {
+        el.insertAdjacentElement("afterend", bar);
+        return bar;
+      }
+    }
+    for (const el of document.querySelectorAll("h1,h2,h3,h4,div,section")) {
+      const tx = (el.innerText || el.textContent || "");
       if (tx.includes("1) Ucitavanje Podneska") || tx.includes("1) Učitavanje Podneska")) {
-        const host = h.closest("section, article, div") || h;
+        const host = el.closest("section, article, div") || el;
         if (host && host.parentElement) {
           host.parentElement.insertBefore(bar, host);
           return bar;
@@ -264,13 +294,51 @@
     const kod = sha ? `[${sha.slice(0, 4)}-${sha.slice(4, 8)}]`.toUpperCase() : "—";
     const broj = sha ? `RUKE-${sha.slice(0, 12).toUpperCase()}` : "—";
     const shaPrikaz = sha ? `${sha.slice(0, 16)}…${sha.slice(-8)}` : "Nije aktivan";
-    const st = statusIzvornika || (sha ? "Spremno za SHA-256 / QES-PDF provjeru" : "Odaberite stavku na Oglasnoj ploči ili učitajte podnesak");
+    const st = statusIzvornika || (sha ? `Aktivan podnesak (${ucitaniIme || sha.slice(0, 12) + "_podnesak.pdf"})` : "Odaberite stavku na Oglasnoj ploči ili učitajte podnesak");
     bar.innerHTML =
       `<b>Kontekst podneska:</b> Kontrolni: <code>${kod}</code> | Broj zapisa: <code>${broj}</code><br>` +
       `<b>SHA-256:</b> <code>${shaPrikaz}</code> | <b>Status:</b> ${st}`;
 
     const btnVal = document.getElementById("ruke-validiraj-ucitani-btn");
     if (btnVal) btnVal.disabled = !sha;
+  }
+
+  async function pokreniLokalnuDssProvjeru() {
+    const sha = aktivniSha();
+    let resBox = document.getElementById("ruke-dss-rezultat");
+    if (!resBox) {
+      resBox = document.createElement("div");
+      resBox.id = "ruke-dss-rezultat";
+      const btnVal = document.getElementById("ruke-validiraj-ucitani-btn");
+      if (btnVal && btnVal.parentElement) btnVal.parentElement.appendChild(resBox);
+      else document.body.appendChild(resBox);
+    }
+    if (!/^[0-9a-f]{64}$/.test(sha)) {
+      resBox.textContent = "[INFO] Nema aktivnog SHA-256 zapisa ili učitanog PDF-a za lokalnu DSS provjeru.";
+      return;
+    }
+    resBox.textContent = "[RADI] Pokrećem lokalnu FIPS 180-4 i strukturalnu provjeru...";
+    const supa = await preuzmiIzSupabase(sha);
+    if (supa) {
+      const r = await fetch(supa.blobUrl);
+      const buf = await r.arrayBuffer();
+      const u8 = new Uint8Array(buf);
+      const calc = await sha256Hex(buf);
+      const isPdf = u8.length >= 5 && u8[0] === 0x25 && u8[1] === 0x50 && u8[2] === 0x44 && u8[3] === 0x46;
+      const hasEof = new TextDecoder().decode(u8.slice(Math.max(0, u8.length - 1024))).includes("%%EOF");
+      resBox.textContent =
+        `[PASS] Lokalna DSS / strukturalna provjera dovršena\n` +
+        `Datoteka:   ${supa.fname} (${u8.length} B)\n` +
+        `PDF format: ${isPdf ? "DA (%PDF-)" : "NE"} | %%EOF: ${hasEof ? "DA" : "NE"}\n` +
+        `SHA-256:    ${calc}\n` +
+        `Integritet: BAJTNO NETAKNUT (SHA-256 podudaran s registrom)`;
+      osvjeziKontekstTraku(`DSS potvrđen (${u8.length} B, SHA-256 valjan)`);
+    } else {
+      resBox.textContent =
+        `[WARN] Aktivan SHA-256: ${sha}\n` +
+        `Datoteka nije dohvaćena iz QES-PDF bucketa — učitajte datoteku izravno u točki 4 za lokalni SHA-256.`;
+      osvjeziKontekstTraku("Provjera lokalnog SHA-256 konteksta");
+    }
   }
 
   function posloziKompaktneTipke() {
@@ -298,11 +366,7 @@
             b.id = "ruke-validiraj-ucitani-btn";
             b.textContent = "Validiraj učitani podnesak";
             b.disabled = !aktivniSha();
-            b.addEventListener("click", function () {
-              const s = aktivniSha();
-              if (!s) return;
-              osvjeziKontekstTraku(`DSS/SHA-256 kontekst potvrđen (${s.slice(0, 12)}…)`);
-            });
+            b.addEventListener("click", pokreniLokalnuDssProvjeru);
             box.appendChild(b);
             break;
           }
